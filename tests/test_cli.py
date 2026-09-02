@@ -334,19 +334,22 @@ def test_show_prints_stored_output(tmp_path: Path, capsys) -> None:
 
 
 def test_rescore_updates_scores_without_rerunning(tmp_path: Path, capsys) -> None:
-    """The cache paying off: a corrected scorer costs no API calls."""
+    """The cache paying off: a corrected scorer costs no API calls, and it can
+    genuinely flip a verdict, not just change some incidental detail text."""
     suite = write_suite(tmp_path)
     run(tmp_path, "run", str(suite))
     capsys.readouterr()
     paths = Paths(tmp_path / ".noisefloor")
     run_id = latest_run_id(paths)
     before = RunRecord.load(paths, run_id)
+    assert before.cases[0].scores[0][1].passed  # "twelve" is in the fake answer
 
-    fixed = write_suite(tmp_path, needle="parks")
-    assert run(tmp_path, "rescore", "--suite", str(fixed)) == 0
+    corrected = write_suite(tmp_path, needle="unicorn")
+    assert run(tmp_path, "rescore", "--suite", str(corrected)) == 0
 
     after = RunRecord.load(paths, run_id)
     assert after.cases[0].scores != before.cases[0].scores
+    assert not after.cases[0].scores[0][1].passed  # "unicorn" is not
     # "did not rerun" means the stored raw output — including timing, which a
     # fresh subprocess invocation could not reproduce exactly — is untouched.
     assert after.cases[0].invocations == before.cases[0].invocations

@@ -108,6 +108,16 @@ def test_run_summary_reports_outcomes() -> None:
     assert "error" in text
 
 
+def test_run_summary_reports_actual_per_case_repeat_counts() -> None:
+    """A suite where one case overrides `repeats` must not be summarized with
+    the suite-level default alone — that number can be false for the other
+    case. `record()` sets `RunRecord.repeats` from the first case only (2
+    here), so the old code would have printed "2 cases × 2 repeats", falsely
+    claiming case "b"'s 5 repeats as 2."""
+    text = render_run_summary(record(case("a", 2, 2), case("b", 5, 5)))
+    assert "2-5 repeats" in text
+
+
 def test_mark_covers_every_case_verdict() -> None:
     """A verdict added to CaseVerdict without a matching _MARK entry would
     KeyError at render time; this pins the two in sync."""

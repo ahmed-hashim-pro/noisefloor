@@ -141,5 +141,16 @@ def render_run_summary(record: RunRecord) -> str:
     detail = ", ".join(f"{n} {name}" for name, n in sorted(counts.items()))
     return (
         f"{record.run_id}\n"
-        f"  {len(record.cases)} cases × {record.repeats} repeats — {detail}"
+        f"  {len(record.cases)} cases × {_repeats_desc(record)} repeats — {detail}"
     )
+
+
+def _repeats_desc(record: RunRecord) -> str:
+    """`record.repeats` is the suite-level default, but a per-case `repeats:`
+    override makes it false for some cases — report what actually ran."""
+    actual = {len(c.invocations) for c in record.cases}
+    if not actual:
+        return "0"
+    if len(actual) == 1:
+        return str(next(iter(actual)))
+    return f"{min(actual)}-{max(actual)}"
