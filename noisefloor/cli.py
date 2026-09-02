@@ -118,7 +118,16 @@ def _load(path: Path):
     return suite
 
 
+def _invalid_repeats(repeats: int | None) -> bool:
+    return repeats is not None and repeats < 1
+
+
 def _cmd_run(args: argparse.Namespace, paths: Paths) -> int:
+    if _invalid_repeats(args.repeats):
+        print(
+            f"error: --repeats must be at least 1, got {args.repeats}", file=sys.stderr
+        )
+        return CONFIG_ERROR
     suite = _load(args.suite)
     record = execute(suite, paths=paths, repeats=args.repeats, jobs=args.jobs)
     record.save(paths)
@@ -133,6 +142,11 @@ def _cmd_run(args: argparse.Namespace, paths: Paths) -> int:
 
 
 def _cmd_check(args: argparse.Namespace, paths: Paths) -> int:
+    if _invalid_repeats(args.repeats):
+        print(
+            f"error: --repeats must be at least 1, got {args.repeats}", file=sys.stderr
+        )
+        return CONFIG_ERROR
     suite = _load(args.suite)
     record = execute(suite, paths=paths, repeats=args.repeats, jobs=args.jobs)
     record.save(paths)

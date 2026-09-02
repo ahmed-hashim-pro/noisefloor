@@ -106,6 +106,16 @@ class RunRecord:
     @classmethod
     def load(cls, paths: Paths, run_id: str) -> RunRecord:
         run_dir = paths.run_dir(run_id)
+        try:
+            return cls._load(run_dir, run_id, paths)
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise RunRecordError(
+                f"run {run_id!r}: run.json or its scores are corrupt or "
+                f"incomplete — {exc}"
+            ) from exc
+
+    @classmethod
+    def _load(cls, run_dir: Path, run_id: str, paths: Paths) -> RunRecord:
         meta = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
         scores = json.loads((run_dir / "scores.json").read_text(encoding="utf-8"))
 

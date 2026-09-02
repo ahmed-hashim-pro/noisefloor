@@ -164,6 +164,24 @@ def test_a_missing_suite_exits_three(tmp_path: Path, capsys) -> None:
     assert "not found" in capsys.readouterr().err
 
 
+def test_repeats_zero_on_run_is_rejected_as_a_configuration_error(
+    tmp_path: Path, capsys
+) -> None:
+    """A zero-evidence record must never be produced silently; it later reads
+    as `broke` when diffed, with nothing to explain why."""
+    suite = write_suite(tmp_path)
+    assert run(tmp_path, "run", str(suite), "--repeats", "0") == 3
+    assert "repeats" in capsys.readouterr().err.lower()
+
+
+def test_repeats_zero_on_check_is_rejected_as_a_configuration_error(
+    tmp_path: Path, capsys
+) -> None:
+    suite = write_suite(tmp_path)
+    assert run(tmp_path, "check", str(suite), "--repeats", "0") == 3
+    assert "repeats" in capsys.readouterr().err.lower()
+
+
 def test_an_unknown_scorer_exits_three(tmp_path: Path, capsys) -> None:
     path = tmp_path / "bad.yaml"
     path.write_text(
@@ -206,6 +224,37 @@ def test_a_corrupted_run_record_exits_three_not_a_traceback(
 
     assert run(tmp_path, "show", run_id) == 3
     assert "inconsistent" in capsys.readouterr().err
+
+
+def test_malformed_run_json_exits_three_not_one(tmp_path: Path, capsys) -> None:
+    """A corrupt run.json must never read as exit 1 (regression) — that would
+    be worse than a traceback: a lie about what was measured."""
+    suite = write_suite(tmp_path)
+    run(tmp_path, "run", str(suite))
+    paths = Paths(tmp_path / ".noisefloor")
+    run_id = latest_run_id(paths)
+    (paths.run_dir(run_id) / "run.json").write_text("{not valid json")
+
+    assert run(tmp_path, "show", run_id) == 3
+    assert "corrupt or incomplete" in capsys.readouterr().err
+
+
+def test_run_json_missing_a_required_key_exits_three_not_one(
+    tmp_path: Path, capsys
+) -> None:
+    """Valid JSON that is missing a field RunRecord requires is a
+    configuration error, not a clean run and not a raw traceback."""
+    suite = write_suite(tmp_path)
+    run(tmp_path, "run", str(suite))
+    paths = Paths(tmp_path / ".noisefloor")
+    run_id = latest_run_id(paths)
+    run_json = paths.run_dir(run_id) / "run.json"
+    meta = json.loads(run_json.read_text())
+    del meta["target_command"]
+    run_json.write_text(json.dumps(meta))
+
+    assert run(tmp_path, "show", run_id) == 3
+    assert "corrupt or incomplete" in capsys.readouterr().err
 
 
 # -- plumbing --------------------------------------------------------------
