@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
@@ -58,6 +58,9 @@ class RunRecord:
     finished_at: str
     harness_version: str
     cases: list[CaseRun]
+    #: Defaults to {} so `RunRecord.load` tolerates a run.json written before
+    #: this field existed, instead of raising on the missing key.
+    env: dict[str, str] = field(default_factory=dict)
 
     @property
     def case_by_id(self) -> dict[str, CaseRun]:
@@ -199,6 +202,7 @@ def execute(
         finished_at=datetime.now(UTC).isoformat(),
         harness_version=__version__,
         cases=cases,
+        env=dict(suite.target.env),
     )
 
 

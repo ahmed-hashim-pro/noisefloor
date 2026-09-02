@@ -47,6 +47,39 @@ def test_raw_output_is_persisted_per_repeat(simple_suite, paths) -> None:
     assert json.loads(payload["stdout"])["confidence"] == "high"
 
 
+def test_execute_records_the_target_env(suite_factory, paths) -> None:
+    """`target.env` changes behaviour, so a stored run must be able to
+    explain its own numbers when env is what varied."""
+    suite = suite_factory(
+        f"""
+        name: demo
+        target:
+          command: ["{sys.executable}", "{FAKE}"]
+          env: {{FOO: bar}}
+        cases:
+          - id: a
+            input: x
+            scorers: [json_valid]
+        """
+    )
+    record = execute(suite, paths=paths, repeats=1, started=FROZEN)
+    assert record.env == {"FOO": "bar"}
+
+
+def test_load_tolerates_a_run_json_with_no_env_key(simple_suite, paths) -> None:
+    """Backward compatibility: a run.json written before `env` existed must
+    still load, not raise."""
+    record = execute(simple_suite, paths=paths, started=FROZEN)
+    record.save(paths)
+    run_json = paths.run_dir(record.run_id) / "run.json"
+    meta = json.loads(run_json.read_text())
+    del meta["env"]
+    run_json.write_text(json.dumps(meta))
+
+    loaded = RunRecord.load(paths, record.run_id)
+    assert loaded.env == {}
+
+
 def test_a_saved_run_round_trips(simple_suite, paths) -> None:
     record = execute(simple_suite, paths=paths, started=FROZEN)
     record.save(paths)

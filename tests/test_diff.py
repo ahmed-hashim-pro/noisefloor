@@ -38,7 +38,12 @@ def case(case_id: str, passes: int, n: int, *, ok: bool = True, dh: str = "h1"):
     )
 
 
-def record(*cases: CaseRun, run_id: str = "r", command=None) -> RunRecord:
+def record(
+    *cases: CaseRun,
+    run_id: str = "r",
+    command=None,
+    env: dict[str, str] | None = None,
+) -> RunRecord:
     repeats = len(cases[0].invocations) if cases else 5
     return RunRecord(
         run_id=run_id,
@@ -53,6 +58,7 @@ def record(*cases: CaseRun, run_id: str = "r", command=None) -> RunRecord:
         finished_at="2026-09-02T10:01:00+00:00",
         harness_version="0.1.0",
         cases=list(cases),
+        env=env or {},
     )
 
 
@@ -206,6 +212,19 @@ def test_a_changed_target_can_be_allowed_with_a_warning() -> None:
         allow_target_change=True,
     )
     assert any("target command" in w for w in d.warnings)
+
+
+def test_an_env_difference_is_warned_about_not_refused() -> None:
+    """A byte-identical target command with a changed env (e.g. a model swap
+    via `MODEL=sonnet` -> `MODEL=opus`) must not diff silently against a
+    stale baseline -- but must also not be refused the way a command change
+    is, since env is how CLI tests intentionally drive behaviour changes."""
+    d = diff_runs(
+        record(case("a", 5, 5), run_id="b", env={"MODEL": "sonnet"}),
+        record(case("a", 5, 5), env={"MODEL": "opus"}),
+    )
+    assert any("env" in w.lower() for w in d.warnings)
+    assert d.exit_code == 0
 
 
 def test_mismatched_repeat_counts_are_warned_about() -> None:

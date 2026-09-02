@@ -95,6 +95,9 @@ def diff_runs(
             )
         warnings.append(message + " (comparing anyway, as requested)")
 
+    if baseline.env != candidate.env:
+        warnings.append(f"target env changed: {_env_diff(baseline.env, candidate.env)}")
+
     if baseline.repeats != candidate.repeats:
         warnings.append(
             f"repeat counts differ ({baseline.repeats} vs {candidate.repeats}); "
@@ -203,3 +206,12 @@ def _compare_case(
 def _error_note(case: CaseRun) -> str:
     outcomes = sorted({inv.outcome for inv in case.invocations})
     return f"every repeat failed: {', '.join(outcomes)}"
+
+
+def _env_diff(before: dict[str, str], after: dict[str, str]) -> str:
+    changed = []
+    for key in sorted(set(before) | set(after)):
+        b, a = before.get(key), after.get(key)
+        if b != a:
+            changed.append(f"{key}={b!r} -> {a!r}")
+    return ", ".join(changed)
