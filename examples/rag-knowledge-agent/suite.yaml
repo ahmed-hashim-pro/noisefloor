@@ -1,0 +1,56 @@
+# Targets github.com/ahmed-hashim-pro/rag-knowledge-agent unmodified.
+#
+#   cd ../rag-knowledge-agent && pip install -e . && rag ingest sample_corpus
+#   noisefloor check examples/rag-knowledge-agent/suite.yaml
+#
+# Regenerating the committed baseline needs ANTHROPIC_API_KEY and roughly
+# 100 model calls. Reading it needs nothing.
+name: rag-knowledge-agent
+target:
+  command: ["rag", "ask", "--json", "{{input}}"]
+  cwd: ../../../rag-knowledge-agent   # relative to this file
+  timeout_s: 120
+defaults:
+  repeats: 5
+
+cases:
+  - id: offline-behaviour
+    input: |
+      A Meridian-3 has stopped reporting. How long can it keep working
+      offline, and how would I detect that from the Fleet Control API?
+    scorers:
+      - json_valid
+      - {type: json_path_in, path: confidence, values: [high, medium]}
+      - {type: json_path_subset, path: "citations[].source",
+         allowed: [product-specs.md, api-reference.md, troubleshooting.md,
+                   onboarding-guide.md]}
+      - {type: contains, needle: "offline", path: answer}
+
+  - id: charging-bays
+    input: How many charging bays should we provision for a two-shift operation?
+    scorers:
+      - json_valid
+      - {type: json_path_in, path: confidence, values: [high, medium]}
+      - {type: json_path_number, path: "citations[].score", min: 0.35}
+
+  - id: error-code-409
+    input: Why did my task cancellation return 409?
+    scorers:
+      - json_valid
+      - {type: contains, needle: "409", path: answer}
+      - {type: json_path_subset, path: "citations[].source",
+         allowed: [api-reference.md, troubleshooting.md]}
+
+  - id: refuses-parental-leave
+    input: What is Acme Robotics' parental leave policy?
+    scorers:
+      - json_valid
+      - {type: contains, needle: "I don't know", path: answer}
+      - {type: json_path_equals, path: confidence, value: low}
+
+  - id: refuses-off-domain
+    input: What is the recipe for sourdough bread?
+    scorers:
+      - json_valid
+      - {type: json_path_equals, path: confidence, value: low}
+      - {type: not_contains, needle: "flour", path: answer}
