@@ -57,9 +57,10 @@ def test_source_dir_anchors_relative_cwd(tmp_path: Path) -> None:
     """`cwd` in the suite is relative to the suite file, not the shell."""
     s = load_suite(write(tmp_path, SUITE))
     assert s.source_dir == tmp_path
+    assert s.target_cwd == (tmp_path / "../thing").resolve()
 
 
-def test_definition_hash_changes_with_input(tmp_path: Path) -> None:
+def test_editing_one_case_does_not_change_another_cases_hash(tmp_path: Path) -> None:
     before = load_suite(write(tmp_path, SUITE)).cases[0].definition_hash()
     after = load_suite(write(tmp_path, SUITE.replace("short", "changed"))).cases[0]
     assert after.definition_hash() == before  # case "one" is untouched
