@@ -710,7 +710,7 @@ git commit -m "Add suite model, YAML loading, and per-case definition hashes"
 - Consumes: `suite.TargetSpec`, `suite.Case`.
 - Produces:
   - `target.Invocation` — frozen dataclass with `case_id: str`, `repeat: int`, `argv: list[str]`, `stdout: str`, `stderr: str`, `exit_code: int | None`, `duration_s: float`, `outcome: str`, `parsed: Any | None`, and `.ok: bool`
-  - `target.render_argv(command: list[str], *, case_id: str, case_input: str) -> list[str]`
+  - `target.render_argv(command: list[str], *, case_id: str, case_input: str, repeat: int) -> list[str]`
   - `target.invoke(spec: TargetSpec, case: Case, repeat: int, *, cwd: Path) -> Invocation`
   - `target.OUTCOMES: tuple[str, ...]` = `("ok", "error:exit", "error:timeout", "error:parse")`
 
@@ -722,7 +722,9 @@ python tests/fake_target.py --answer TEXT [--confidence C] [--exit-code N]
                             [--flake-every N --repeat R]
 ```
 
-It prints `{"answer": ..., "confidence": ..., "citations": [...]}` to stdout. With `--flake-every N --repeat R` it degrades deterministically whenever `R % N == 0`, which is how tests produce a *known* pass rate without randomness.
+It prints `{"answer": ..., "confidence": ..., "citations": [...]}` to stdout. With `--flake-every N --repeat R` it degrades deterministically whenever `R % N == 0`.
+
+Paired with the `{{repeat}}` template variable, that is how tests construct a *known* pass rate: `--flake-every 2 --repeat {{repeat}}` over four repeats gives exactly `fail, pass, fail, pass`. Tasks 6 and 8 rest on being able to produce a specific pass rate on demand, so `{{repeat}}` is not optional sugar.
 
 - [ ] **Step 1: Write the fake target**
 
@@ -817,18 +819,25 @@ def spec(*extra: str, timeout_s: float = 10.0) -> TargetSpec:
 
 
 def test_input_is_substituted_into_one_element() -> None:
-    argv = render_argv(["cmd", "--q={{input}}"], case_id="c", case_input="a b")
+    argv = render_argv(
+        ["cmd", "--q={{input}}"], case_id="c", case_input="a b", repeat=0
+    )
     assert argv == ["cmd", "--q=a b"]
 
 
 def test_case_id_is_substituted() -> None:
-    assert render_argv(["{{case_id}}"], case_id="c1", case_input="") == ["c1"]
+    assert render_argv(["{{case_id}}"], case_id="c1", case_input="", repeat=0) == ["c1"]
+
+
+def test_repeat_is_substituted() -> None:
+    """Lets a target vary per repeat, which is how tests build a known rate."""
+    assert render_argv(["{{repeat}}"], case_id="c", case_input="", repeat=3) == ["3"]
 
 
 def test_shell_metacharacters_stay_inside_one_argument(tmp_path: Path) -> None:
     """A shell string here would make case input a command-injection vector."""
     nasty = '; rm -rf ~ && echo "pwned" `whoami` $(id)'
-    argv = render_argv(["cmd", "{{input}}"], case_id="c", case_input=nasty)
+    argv = render_argv(["cmd", "{{input}}"], case_id="c", case_input=nasty, repeat=0)
     assert argv == ["cmd", nasty]
 
 
@@ -931,15 +940,21 @@ class Invocation:
         return self.outcome == "ok"
 
 
-def render_argv(command: list[str], *, case_id: str, case_input: str) -> list[str]:
+def render_argv(
+    command: list[str], *, case_id: str, case_input: str, repeat: int
+) -> list[str]:
     return [
-        element.replace("{{input}}", case_input).replace("{{case_id}}", case_id)
+        element.replace("{{input}}", case_input)
+        .replace("{{case_id}}", case_id)
+        .replace("{{repeat}}", str(repeat))
         for element in command
     ]
 
 
 def invoke(spec: TargetSpec, case: Case, repeat: int, *, cwd: Path) -> Invocation:
-    argv = render_argv(spec.command, case_id=case.id, case_input=case.input)
+    argv = render_argv(
+        spec.command, case_id=case.id, case_input=case.input, repeat=repeat
+    )
     started = time.monotonic()
 
     def finish(**kwargs: Any) -> Invocation:
@@ -1245,7 +1260,23 @@ def test_keys_are_index_prefixed() -> None:
 Run: `python -m pytest tests/test_scoring.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.scoring'`
 
-- [ ] **Step 3: Write the implementation**
+- [ ] **Step 3: Pre-flight the mixin before writing nine scorers on top of it**
+
+Five scorers inherit from two pydantic models at once
+(`class JsonPathEquals(_Scorer, _PathMixin)`). Pydantic v2 supports this, but if
+it does not work here it fails at *import*, so every scoring test errors at once
+and tells you nothing about which construct broke. Write `_Scorer`, `_PathMixin`,
+and `JsonPathEquals` only, then:
+
+```bash
+python -c "from noisefloor.scoring import JsonPathEquals; print(JsonPathEquals(path='a', value=1))"
+```
+
+If that errors, abandon the mixin: move `path: str | None` and
+`extract_values()` onto `_Scorer` itself and delete `_PathMixin`. The rest of
+the module is unchanged either way.
+
+- [ ] **Step 4: Write the implementation**
 
 Create `noisefloor/scoring.py`:
 
@@ -1542,12 +1573,12 @@ def describe() -> list[tuple[str, str, str]]:
     )
 ```
 
-- [ ] **Step 4: Run the tests**
+- [ ] **Step 5: Run the tests**
 
 Run: `python -m pytest tests/test_scoring.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add noisefloor/scoring.py tests/test_scoring.py
@@ -2076,21 +2107,26 @@ def test_errored_repeats_are_recorded_but_not_scored(suite_factory, paths) -> No
     assert case.scores == [[], [], []]
 
 
-def test_flakiness_is_reproducible(suite_factory, paths) -> None:
-    """`--flake-every 2` fails repeats 0 and 2 of 3 — a known 1/3 pass rate."""
+def test_a_known_pass_rate_is_reproducible(suite_factory, paths) -> None:
+    """Tasks 6 and 8 rest on being able to construct a specific pass rate."""
     suite = suite_factory(
         f"""
         name: demo
         target: {{command: ["{sys.executable}", "{FAKE}",
-                  "--flake-every", "2", "--repeat", "{{{{case_id}}}}"]}}
+                  "--flake-every", "2", "--repeat", "{{{{repeat}}}}"]}}
         cases:
-          - id: "0"
+          - id: alpha
             input: x
             scorers: [{{type: json_path_equals, path: confidence, value: high}}]
         """
     )
-    record = execute(suite, paths=paths, repeats=1, started=FROZEN)
-    assert record.cases[0].scores[0][0].passed is False
+    record = execute(suite, paths=paths, repeats=4, started=FROZEN)
+    assert [s[0].passed for s in record.cases[0].scores] == [
+        False,
+        True,
+        False,
+        True,
+    ]
 
 
 def test_rescore_recomputes_from_stored_output(simple_suite, paths) -> None:
@@ -3183,9 +3219,11 @@ def test_run_records_a_run(tmp_path: Path, capsys) -> None:
 
 
 def test_first_check_adopts_a_baseline_and_says_so(tmp_path: Path, capsys) -> None:
+    """Exit 0 here means "nothing was compared", not "nothing regressed"."""
     assert run(tmp_path, "check", str(write_suite(tmp_path))) == 0
-    captured = capsys.readouterr()
-    assert "baseline" in captured.err.lower()
+    err = capsys.readouterr().err
+    assert "no baseline" in err
+    assert "adopted" in err
 
 
 def test_second_check_against_an_unchanged_target_passes(tmp_path: Path) -> None:
@@ -3749,6 +3787,12 @@ from *regressed*, with its own exit code.
 | 1 | at least one case regressed |
 | 2 | at least one case broke |
 | 3 | harness or configuration error |
+
+One thing to know before wiring this into CI: the **first** `check` for a suite
+has nothing to compare against, so it adopts its own run as the baseline and
+exits 0. That is a pass by absence, not by comparison. On a fresh checkout with
+no `.noisefloor/`, the first build is always green — commit a baseline, or run
+`check` twice.
 
 ## Raw output is kept
 

@@ -123,8 +123,10 @@ cases:
 
 ### 5.1 argv templating — no shell, ever
 
-`command` is a list. `{{input}}` (and `{{case_id}}`) are substituted into
-*individual argv elements*, and the process is spawned without a shell.
+`command` is a list. `{{input}}`, `{{case_id}}`, and `{{repeat}}` are substituted
+into *individual argv elements*, and the process is spawned without a shell.
+(`{{repeat}}` is what lets a test target vary deterministically per repeat, and
+so construct a known pass rate.)
 
 This is not a stylistic preference. A shell string would make a case input of
 `"; rm -rf ~"` a command-injection vector — in a harness whose first fixture
