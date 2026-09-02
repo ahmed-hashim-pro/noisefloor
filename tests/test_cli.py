@@ -110,6 +110,26 @@ def test_a_real_regression_exits_one(tmp_path: Path) -> None:
     assert run(tmp_path, "check", str(degraded), "--allow-target-change") == 1
 
 
+def test_partial_degradation_is_surfaced_not_silently_unchanged(
+    tmp_path: Path, capsys
+) -> None:
+    """A candidate that errors on some repeats but not all must say so, even
+    though it is not `broke` and the exit code does not change for it alone."""
+    suite = write_suite(tmp_path)
+    run(tmp_path, "check", str(suite), "--repeats", "5")
+    degraded = write_suite(tmp_path, "--fail-every", "2", "--repeat", "{{repeat}}")
+    capsys.readouterr()
+
+    code = run(
+        tmp_path, "check", str(degraded), "--allow-target-change", "--repeats", "5"
+    )
+    out = capsys.readouterr().out
+
+    assert code == 0  # 2 of 5 ok repeats still all pass; not a regression
+    assert "2/5 repeats ok in the candidate, down from 5/5" in out
+    assert "case 'alpha' degraded:" in out
+
+
 def test_a_broken_target_exits_two(tmp_path: Path) -> None:
     suite = write_suite(tmp_path)
     run(tmp_path, "check", str(suite))

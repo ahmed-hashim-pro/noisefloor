@@ -162,6 +162,32 @@ def test_an_improvement_with_no_regression_is_flagged_as_improved() -> None:
     assert verdict(case("a", 2, 5), case("a", 5, 5)) == "improved"
 
 
+def mixed(case_id: str, oks: list[bool], *, dh: str = "h1") -> CaseRun:
+    """`oks[i]` says whether repeat i succeeded, so a case can be genuinely
+    `degraded` (some but not all repeats erroring), not just fully ok or fully
+    errored like `case()` above produces."""
+    invocations = [
+        inv(i, outcome="ok" if ok else "error:exit") for i, ok in enumerate(oks)
+    ]
+    scores = [[result(True)] if ok else [] for ok in oks]
+    return CaseRun(
+        case_id=case_id, definition_hash=dh, invocations=invocations, scores=scores
+    )
+
+
+def test_partial_degradation_is_noted_and_warned_about() -> None:
+    """Two of five candidate repeats erroring must be visible even though the
+    case does not `broke` and the exit code does not change for it alone."""
+    d = diff_runs(
+        record(case("a", 5, 5), run_id="b"),
+        record(mixed("a", [True, True, True, False, False]), run_id="c"),
+    )
+    assert d.cases[0].verdict != "broke"
+    assert "3/5" in d.cases[0].note and "5/5" in d.cases[0].note
+    assert any("degraded" in w for w in d.warnings)
+    assert d.exit_code == 0
+
+
 # -- guards ----------------------------------------------------------------
 
 

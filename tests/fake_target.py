@@ -38,6 +38,7 @@ def main() -> int:
     parser.add_argument("--garbage", action="store_true")
     parser.add_argument("--stderr", default="")
     parser.add_argument("--flake-every", type=int, default=0)
+    parser.add_argument("--fail-every", type=int, default=0)
     parser.add_argument("--repeat", type=int, default=0)
     parser.add_argument("--echo-argv", action="store_true")
     parser.add_argument("question", nargs="?", default="")
@@ -54,6 +55,10 @@ def main() -> int:
     if args.garbage:
         print("not json at all <html>")
         return args.exit_code
+
+    if args.fail_every > 0 and args.repeat % args.fail_every == 0:
+        print("simulated per-repeat failure", file=sys.stderr)
+        return 1
 
     flaking = args.flake_every > 0 and args.repeat % args.flake_every == 0
     payload = {

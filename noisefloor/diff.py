@@ -181,12 +181,22 @@ def _compare_case(
     else:
         resolved = "unchanged"
 
+    note = ""
+    if after.ok_count < before.ok_count:
+        note = (
+            f"{after.ok_count}/{len(after.invocations)} repeats ok in the "
+            f"candidate, down from {before.ok_count}/{len(before.invocations)} "
+            "in the baseline"
+        )
+        warnings.append(f"case {case_id!r} degraded: {note}")
+
     return CaseDiff(
         case_id=case_id,
         verdict=resolved,
         scorers=significances,
         baseline=base_agg,
         candidate=cand_agg,
+        note=note,
     )
 
 

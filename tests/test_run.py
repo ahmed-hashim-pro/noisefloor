@@ -114,6 +114,26 @@ def test_a_known_pass_rate_is_reproducible(suite_factory, paths) -> None:
     ]
 
 
+def test_fail_every_produces_a_genuinely_degraded_case(suite_factory, paths) -> None:
+    """`degraded` is a real outcome CaseRun computes, not just a code path
+    nothing exercises: some repeats fail, the rest succeed, in one case."""
+    suite = suite_factory(
+        f"""
+        name: demo
+        target: {{command: ["{sys.executable}", "{FAKE}",
+                  "--fail-every", "2", "--repeat", "{{{{repeat}}}}"]}}
+        cases:
+          - id: a
+            input: x
+            scorers: [json_valid]
+        """
+    )
+    record = execute(suite, paths=paths, repeats=4, started=FROZEN)
+    case = record.cases[0]
+    assert case.outcome == "degraded"
+    assert case.ok_count == 2
+
+
 def test_rescore_recomputes_from_stored_output(simple_suite, paths) -> None:
     record = execute(simple_suite, paths=paths, started=FROZEN)
     again = rescore(record, simple_suite)
