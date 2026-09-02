@@ -13,7 +13,7 @@ something a regression when the delta clears it.
 noisefloor check examples/quickstart/suite.yaml
 ```
 
-That runs against `examples/quickstart/target.py`, a canned two-line stand-in
+That runs against `examples/quickstart/target.py`, a small canned stand-in
 committed alongside it — no model, no API key, no network, no sibling
 checkout. It exists so this command works right after a clone; the real
 noise measurement lives in `examples/rag-knowledge-agent/`, below.
