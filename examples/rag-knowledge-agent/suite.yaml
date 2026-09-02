@@ -4,7 +4,15 @@
 #   noisefloor check examples/rag-knowledge-agent/suite.yaml
 #
 # Regenerating the committed baseline needs ANTHROPIC_API_KEY and roughly
-# 100 model calls. Reading it needs nothing.
+# 25 model calls (5 cases x 5 repeats). Reading it needs nothing.
+#
+# The `allowed` lists below came from running this project's own retrieval
+# offline (no API key) over each case's input and recording the sources it
+# actually returned, `sample_corpus/`-prefix and all — citation `source`
+# values are repo-relative paths, not bare filenames. Do not "tidy" these
+# back to bare filenames or widen them past what was measured: a source
+# outside the list should fail the scorer, visibly, so it can be reviewed
+# and the list widened deliberately.
 name: rag-knowledge-agent
 target:
   command: ["rag", "ask", "--json", "{{input}}"]
@@ -21,9 +29,10 @@ cases:
     scorers:
       - json_valid
       - {type: json_path_in, path: confidence, values: [high, medium]}
+      # measured sources for this input; see the header note.
       - {type: json_path_subset, path: "citations[].source",
-         allowed: [product-specs.md, api-reference.md, troubleshooting.md,
-                   onboarding-guide.md]}
+         allowed: [sample_corpus/api-reference.md, sample_corpus/faq.md,
+                   sample_corpus/product-specs.md, sample_corpus/support-runbook.md]}
       - {type: contains, needle: "offline", path: answer}
 
   - id: charging-bays
@@ -38,10 +47,18 @@ cases:
     scorers:
       - json_valid
       - {type: contains, needle: "409", path: answer}
+      # measured sources for this input; see the header note.
       - {type: json_path_subset, path: "citations[].source",
-         allowed: [api-reference.md, troubleshooting.md]}
+         allowed: [sample_corpus/api-reference.md, sample_corpus/faq.md,
+                   sample_corpus/support-runbook.md]}
 
   - id: refuses-parental-leave
+    # Retrieves at top score 0.436, above the 0.35 confidence floor, so this
+    # is not gated to the canned refusal — the model must decide on its own
+    # whether the (off-topic) retrieved context supports an answer. The
+    # verdict below is a genuine unknown, not a safe bet: this case
+    # deliberately probes a near-floor question, and a failing scorer here
+    # is what Task 12's measurement is for, not a sign the suite is broken.
     input: What is Acme Robotics' parental leave policy?
     scorers:
       - json_valid
