@@ -6,13 +6,14 @@
 # Regenerating the committed baseline needs ANTHROPIC_API_KEY and roughly
 # 25 model calls (5 cases x 5 repeats). Reading it needs nothing.
 #
-# The `allowed` lists below came from running this project's own retrieval
-# offline (no API key) over each case's input and recording the sources it
-# actually returned, `sample_corpus/`-prefix and all — citation `source`
-# values are repo-relative paths, not bare filenames. Do not "tidy" these
-# back to bare filenames or widen them past what was measured: a source
-# outside the list should fail the scorer, visibly, so it can be reviewed
-# and the list widened deliberately.
+# The `allowed` lists below came from running rag-knowledge-agent's own
+# retrieval (the target project, not noisefloor) offline, no API key needed,
+# over each case's input, and recording the sources it actually returned —
+# `sample_corpus/`-prefix and all, since citation `source` values are
+# repo-relative paths, not bare filenames. Do not "tidy" these back to bare
+# filenames or widen them past what was measured: a source outside the list
+# should fail the scorer, visibly, so it can be reviewed and the list
+# widened deliberately.
 name: rag-knowledge-agent
 target:
   command: ["rag", "ask", "--json", "{{input}}"]

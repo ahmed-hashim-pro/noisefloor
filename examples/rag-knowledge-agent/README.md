@@ -2,10 +2,18 @@
 
 `suite.yaml` targets
 [rag-knowledge-agent](https://github.com/ahmed-hashim-pro/rag-knowledge-agent)
-unmodified, through its `rag ask --json` command. Five cases cover both
-on-topic questions (expecting `high`/`medium` confidence and citations drawn
-from the sample corpus) and off-topic or out-of-policy questions (expecting
-the model's refusal sentence and `low` confidence).
+unmodified, through its `rag ask --json` command. Five cases, each checking
+a different combination of confidence, citation provenance, and answer
+content — no single description covers all five, so here is what each one
+actually asserts:
+
+| Case | Checks |
+| --- | --- |
+| `offline-behaviour` | on-topic; confidence `high`/`medium`, citation sources against the measured `allowed` list, answer mentions "offline" |
+| `charging-bays` | on-topic; confidence `high`/`medium`, lowest citation score >= 0.35 (no `aggregate` set, so it defaults to `min` — every citation must clear the bar, not just the best one) |
+| `error-code-409` | on-topic; answer mentions "409", citation sources against the measured `allowed` list — no confidence assertion |
+| `refuses-parental-leave` | off-domain but near the confidence floor; the refusal sentence and confidence `low` — see the comment in `suite.yaml`: this one retrieves above the floor, so the verdict is a genuine unknown until measured, not a safe bet |
+| `refuses-off-domain` | off-domain, retrieves nothing; confidence `low`, answer does not mention "flour" — no refusal-sentence assertion |
 
 ## Running it
 
