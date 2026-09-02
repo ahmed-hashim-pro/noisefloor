@@ -1,0 +1,25 @@
+# Self-contained: no API key, no network, no sibling checkout. `target.py` in
+# this directory is a canned stand-in, not a real agent -- this suite exists
+# so the README's opening command is runnable from a fresh clone, not to
+# demonstrate a real noise measurement (see examples/rag-knowledge-agent/ for
+# that).
+name: quickstart
+target:
+  command: ["python", "target.py", "{{input}}"]
+  timeout_s: 10
+defaults:
+  repeats: 3
+
+cases:
+  - id: capital-of-france
+    input: What is the capital of France?
+    scorers:
+      - json_valid
+      - {type: contains, needle: "Paris", path: answer}
+      - {type: json_path_equals, path: confidence, value: high}
+
+  - id: refuses-unknown
+    input: What is the airspeed velocity of an unladen swallow?
+    scorers:
+      - json_valid
+      - {type: json_path_equals, path: confidence, value: low}
