@@ -38,10 +38,26 @@ def test_repeat_is_substituted() -> None:
 
 
 def test_shell_metacharacters_stay_inside_one_argument(tmp_path: Path) -> None:
-    """A shell string here would make case input a command-injection vector."""
+    """Templating leaves shell metacharacters intact as one unmodified argument."""
     nasty = '; rm -rf ~ && echo "pwned" `whoami` $(id)'
     argv = render_argv(["cmd", "{{input}}"], case_id="c", case_input=nasty, repeat=0)
     assert argv == ["cmd", nasty]
+
+
+def test_substituted_input_is_not_rescanned_for_placeholders() -> None:
+    """Case input is untrusted text; text that looks like a placeholder is data."""
+    argv = render_argv(
+        ["cmd", "{{input}}"], case_id="c1", case_input="{{repeat}}", repeat=3
+    )
+    assert argv == ["cmd", "{{repeat}}"]
+
+
+def test_substituted_case_id_is_not_rescanned_for_placeholders() -> None:
+    """Case input is untrusted text; text that looks like a placeholder is data."""
+    argv = render_argv(
+        ["cmd", "{{input}}"], case_id="c1", case_input="{{case_id}}", repeat=3
+    )
+    assert argv == ["cmd", "{{case_id}}"]
 
 
 def test_no_shell_is_used_end_to_end(tmp_path: Path) -> None:

@@ -8,6 +8,7 @@ and a shell string would turn every case into a command-injection vector.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import time
 from dataclasses import dataclass
@@ -17,6 +18,8 @@ from typing import Any
 from noisefloor.suite import Case, TargetSpec
 
 OUTCOMES = ("ok", "error:exit", "error:timeout", "error:parse")
+
+_PLACEHOLDER = re.compile(r"\{\{(input|case_id|repeat)\}\}")
 
 
 @dataclass(frozen=True)
@@ -39,10 +42,12 @@ class Invocation:
 def render_argv(
     command: list[str], *, case_id: str, case_input: str, repeat: int
 ) -> list[str]:
+    # Single pass: chained str.replace calls re-scan already-substituted text,
+    # so case input containing "{{repeat}}" would get replaced a second time.
+    # Case input is untrusted and must pass through as inert data, not template.
+    values = {"input": case_input, "case_id": case_id, "repeat": str(repeat)}
     return [
-        element.replace("{{input}}", case_input)
-        .replace("{{case_id}}", case_id)
-        .replace("{{repeat}}", str(repeat))
+        _PLACEHOLDER.sub(lambda match: values[match.group(1)], element)
         for element in command
     ]
 
