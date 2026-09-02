@@ -73,7 +73,9 @@ counts out of N. A regression is either:
 
 **Continuous scorers** (`json_path_number`, `latency`) require the candidate
 mean to fall outside the baseline's observed range *and* to move by more than
-`--min-effect`.
+`--min-effect`. A continuous scorer with bounds (`min`/`max`/`max_s`) also has
+a pass rate, and the binary rule above applies to that pass rate too — either
+clause firing is a regression.
 
 The second clause exists because a single range rule breaks on binary scorers:
 a unanimous 5/5 baseline has range 0, so any failure looks significant, while a

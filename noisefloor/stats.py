@@ -68,6 +68,17 @@ class ScorerAggregate:
             return f"{self.pass_count}/{self.n}"
         return f"{self.mean:.3f} [{self.vmin:.3f}–{self.vmax:.3f}] n={self.n}"
 
+    @property
+    def rate_band(self) -> str:
+        """Pass count out of N, regardless of scorer kind.
+
+        A continuous scorer also has a pass rate (from its optional bounds),
+        and the binary clauses in ``_worse`` must report *that* number, not
+        the mean/range from :attr:`band` — printing the value band there would
+        show two nearly-identical numbers next to a "rate dropped" verdict.
+        """
+        return f"{self.pass_count}/{self.n}"
+
 
 def aggregate_case(
     per_repeat: list[list[ScoreResult]],
@@ -115,11 +126,14 @@ def _worse(
     """Reason `after` is worse than `before`, or None."""
     if before.pass_rate == 1.0 and after.pass_rate < 1.0:
         return (
-            f"unanimous baseline {before.band} → {after.band}; "
+            f"unanimous baseline {before.rate_band} → {after.rate_band}; "
             "a clean baseline showed no variance, so any failure is new"
         )
     if before.pass_rate - after.pass_rate > min_rate_drop + _THRESHOLD_EPSILON:
-        return f"pass rate {before.band} → {after.band} (drop > {min_rate_drop:.2f})"
+        return (
+            f"pass rate {before.rate_band} → {after.rate_band} "
+            f"(drop > {min_rate_drop:.2f})"
+        )
 
     if before.kind == "continuous":
         higher_better = before.direction == "higher_is_better"

@@ -158,7 +158,25 @@ def test_a_continuous_scorers_pass_rate_also_counts() -> None:
     candidate = aggregate_case([[continuous(0.5, passed=False)] for _ in range(5)])[
         "0:n"
     ]
-    assert compare(baseline, candidate).verdict == "regressed"
+    result = compare(baseline, candidate)
+    assert result.verdict == "regressed"
+    # The unanimous-baseline clause fired on pass rate, not on the value (both
+    # sides are 0.5), so the reason must carry the pass counts, not a mean/range
+    # band that would make identical values look like the "evidence."
+    assert "5/5" in result.reason and "0/5" in result.reason
+
+
+def test_continuous_rate_drop_reports_pass_counts_not_a_value_band() -> None:
+    """Same fix, via the rate-drop clause rather than the unanimous one."""
+    baseline = aggregate_case(
+        [[continuous(0.5, passed=p)] for p in [True, True, True, False, False]]
+    )["0:n"]
+    candidate = aggregate_case(
+        [[continuous(0.5, passed=p)] for p in [True, False, False, False, False]]
+    )["0:n"]
+    result = compare(baseline, candidate)
+    assert result.verdict == "regressed"
+    assert "3/5" in result.reason and "1/5" in result.reason
 
 
 # -- refusing to guess -----------------------------------------------------
