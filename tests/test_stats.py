@@ -92,6 +92,13 @@ def test_min_rate_drop_is_configurable() -> None:
     )
 
 
+def test_a_drop_exactly_at_the_threshold_is_never_a_regression() -> None:
+    """4/5→3/5 and 3/5→2/5 are both one extra failure; float must not split them."""
+    assert compare(agg_binary(4, 5), agg_binary(3, 5)).verdict == "unchanged"
+    assert compare(agg_binary(3, 5), agg_binary(2, 5)).verdict == "unchanged"
+    assert compare(agg_binary(9, 10), agg_binary(7, 10)).verdict == "unchanged"
+
+
 # -- continuous rule -------------------------------------------------------
 
 

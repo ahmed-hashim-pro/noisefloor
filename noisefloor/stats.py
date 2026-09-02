@@ -21,6 +21,12 @@ from noisefloor.scoring import Direction, ScoreResult, ScorerKind
 
 Verdict = Literal["regressed", "improved", "unchanged", "unmeasured", "skipped"]
 
+#: Pass rates are ratios of small integers, so a drop that is mathematically
+#: equal to the threshold can land a few ULPs above it — 4/5 - 3/5 evaluates to
+#: 0.20000000000000007 while 3/5 - 2/5 evaluates to 0.19999999999999996. Without
+#: this tolerance two drops of identical magnitude get opposite verdicts.
+_RATE_EPSILON = 1e-9
+
 
 @dataclass(frozen=True)
 class ScorerAggregate:
@@ -105,7 +111,7 @@ def _worse(
             f"unanimous baseline {before.band} → {after.band}; "
             "a clean baseline showed no variance, so any failure is new"
         )
-    if before.pass_rate - after.pass_rate > min_rate_drop:
+    if before.pass_rate - after.pass_rate > min_rate_drop + _RATE_EPSILON:
         return f"pass rate {before.band} → {after.band} (drop > {min_rate_drop:.2f})"
 
     if before.kind == "continuous":
