@@ -85,10 +85,11 @@ class RunRecord:
         for case in self.cases:
             case_dir = paths.case_dir(self.run_id, case.case_id)
             case_dir.mkdir(parents=True, exist_ok=True)
-            # A run id is only second-resolution, so re-executing the same
-            # suite at the same started= with fewer repeats can reuse a run
-            # id. Without this, higher-numbered repeat files from the earlier
-            # write would survive and outnumber the new scores.json entries.
+            # Re-executing a suite at the same explicit started= (e.g. a
+            # frozen clock in tests) reuses a run id even at microsecond
+            # resolution. Without this, higher-numbered repeat files from the
+            # earlier write would survive and outnumber the new scores.json
+            # entries.
             for stale in case_dir.glob("*.json"):
                 stale.unlink()
             for inv in case.invocations:
@@ -134,7 +135,7 @@ class RunRecord:
 
 
 def make_run_id(suite: Suite, started: datetime) -> str:
-    stamp = started.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+    stamp = started.astimezone(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
     return f"{stamp}-{suite.name}-{suite.suite_hash()[:8]}"
 
 
@@ -248,7 +249,7 @@ def _suite_name_of(run_id: str) -> str | None:
     """Recover the suite name from a run id of the form
     ``<stamp>-<suite_name>-<hash>``.
 
-    The stamp is ``%Y%m%dT%H%M%SZ`` and the hash is hex, so neither can
+    The stamp is ``%Y%m%dT%H%M%S.%fZ`` and the hash is hex, so neither can
     contain a hyphen — but ``Suite.name`` has no such restriction, so a
     plain substring check (``f"-{suite_name}-" in run_id``) would wrongly
     match e.g. suite "demo" against a run id for suite "demo-extra". Split

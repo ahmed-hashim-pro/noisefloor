@@ -10,17 +10,30 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--answer", default="the robot parks after twelve minutes")
+    # Env fallbacks (not just flags) let a suite vary the target's behavior
+    # while its command argv — and therefore RunRecord.target_command — stays
+    # byte-identical, for tests that must not trip diff.py's TargetChanged.
+    parser.add_argument(
+        "--answer",
+        default=os.environ.get(
+            "NOISEFLOOR_FAKE_ANSWER", "the robot parks after twelve minutes"
+        ),
+    )
     parser.add_argument("--confidence", default="high")
     parser.add_argument("--source", default="a.md")
     parser.add_argument("--score", type=float, default=0.7)
-    parser.add_argument("--exit-code", type=int, default=0)
+    parser.add_argument(
+        "--exit-code",
+        type=int,
+        default=int(os.environ.get("NOISEFLOOR_FAKE_EXIT_CODE", "0")),
+    )
     parser.add_argument("--delay", type=float, default=0.0)
     parser.add_argument("--garbage", action="store_true")
     parser.add_argument("--stderr", default="")

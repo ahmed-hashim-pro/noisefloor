@@ -35,7 +35,7 @@ def test_repeats_can_be_overridden(simple_suite, paths) -> None:
 
 def test_run_id_is_self_describing(simple_suite, paths) -> None:
     record = execute(simple_suite, paths=paths, started=FROZEN)
-    assert record.run_id.startswith("20260902T103000Z-demo-")
+    assert record.run_id.startswith("20260902T103000.000000Z-demo-")
 
 
 def test_raw_output_is_persisted_per_repeat(simple_suite, paths) -> None:
@@ -201,7 +201,8 @@ def test_latest_run_id_does_not_match_a_suite_name_that_is_a_substring(
 def test_reexecuting_the_same_run_id_with_fewer_repeats_leaves_no_stale_files(
     simple_suite, paths
 ) -> None:
-    """A run id is only second-resolution, so this can happen with a frozen clock."""
+    """A frozen clock reuses the same started=, and therefore the same run id,
+    even at microsecond resolution."""
     first = execute(simple_suite, paths=paths, repeats=3, started=FROZEN)
     first.save(paths)
     second = execute(simple_suite, paths=paths, repeats=1, started=FROZEN)

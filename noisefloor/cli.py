@@ -18,6 +18,7 @@ from noisefloor.diff import TargetChanged, diff_runs
 from noisefloor.report import FORMATS, render, render_run_summary
 from noisefloor.run import (
     RunRecord,
+    RunRecordError,
     execute,
     get_baseline,
     latest_run_id,
@@ -87,13 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     paths = Paths(args.root or Path(".noisefloor"))
     try:
         return _dispatch(args, paths)
-    except SuiteError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return CONFIG_ERROR
-    except TargetChanged as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return CONFIG_ERROR
-    except FileNotFoundError as exc:
+    except (SuiteError, TargetChanged, FileNotFoundError, RunRecordError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return CONFIG_ERROR
 
