@@ -128,11 +128,38 @@ def test_a_redefined_case_is_excluded_from_the_verdict() -> None:
 def test_a_scorer_missing_on_one_side_is_unmeasured() -> None:
     """The target succeeded but produced no scores, so there is nothing to compare."""
     empty = CaseRun(
-        case_id="a", definition_hash="h1", invocations=[inv(0), inv(1)], scores=[[], []]
+        case_id="a",
+        definition_hash="h1",
+        invocations=[inv(i) for i in range(5)],
+        scores=[[] for _ in range(5)],
     )
     d = diff_runs(record(case("a", 5, 5), run_id="b"), record(empty))
     assert d.cases[0].verdict == "unmeasured"
     assert d.exit_code == 0
+
+
+def test_no_comparable_scorers_on_either_side_is_unmeasured() -> None:
+    """Zero scorers on both sides is stronger evidence of nothing-measured than
+    one-sided emptiness, so it must resolve to unmeasured too, not unchanged."""
+    empty_before = CaseRun(
+        case_id="a",
+        definition_hash="h1",
+        invocations=[inv(i) for i in range(5)],
+        scores=[[] for _ in range(5)],
+    )
+    empty_after = CaseRun(
+        case_id="a",
+        definition_hash="h1",
+        invocations=[inv(i) for i in range(5)],
+        scores=[[] for _ in range(5)],
+    )
+    d = diff_runs(record(empty_before, run_id="b"), record(empty_after))
+    assert d.cases[0].verdict == "unmeasured"
+    assert d.exit_code == 0
+
+
+def test_an_improvement_with_no_regression_is_flagged_as_improved() -> None:
+    assert verdict(case("a", 2, 5), case("a", 5, 5)) == "improved"
 
 
 # -- guards ----------------------------------------------------------------

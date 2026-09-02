@@ -176,7 +176,7 @@ def _compare_case(
         resolved: CaseVerdict = "regressed"
     elif "improved" in verdicts:
         resolved = "improved"
-    elif verdicts and verdicts <= {"unmeasured", "skipped"}:
+    elif verdicts <= {"unmeasured", "skipped"}:
         resolved = "unmeasured"
     else:
         resolved = "unchanged"
