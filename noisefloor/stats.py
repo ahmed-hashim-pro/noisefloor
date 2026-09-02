@@ -21,11 +21,18 @@ from noisefloor.scoring import Direction, ScoreResult, ScorerKind
 
 Verdict = Literal["regressed", "improved", "unchanged", "unmeasured", "skipped"]
 
-#: Pass rates are ratios of small integers, so a drop that is mathematically
-#: equal to the threshold can land a few ULPs above it — 4/5 - 3/5 evaluates to
-#: 0.20000000000000007 while 3/5 - 2/5 evaluates to 0.19999999999999996. Without
-#: this tolerance two drops of identical magnitude get opposite verdicts.
-_RATE_EPSILON = 1e-9
+#: Both significance clauses compare a float delta against a configured
+#: constant (``min_rate_drop`` or ``min_effect``), and an exact-threshold delta
+#: can land a few ULPs to either side depending on which arithmetic produced
+#: it — 4/5 - 3/5 evaluates to 0.20000000000000007 while 3/5 - 2/5 evaluates to
+#: 0.19999999999999996; 1.1 - 1.0 evaluates to 0.10000000000000009 while
+#: 0.5 - 0.4 evaluates to 0.09999999999999998. Pass rates are quantized at
+#: 1/n, so once this much error is absorbed the comparison is exact for any
+#: realistic n; continuous effects are not quantized at all, so they are, if
+#: anything, more exposed. An absolute tolerance is the right shape for both:
+#: these scorers produce magnitudes in a similar range (0-1 confidence/rate
+#: scores, small numbers of seconds), so one constant suffices without scaling.
+_THRESHOLD_EPSILON = 1e-9
 
 
 @dataclass(frozen=True)
@@ -111,7 +118,7 @@ def _worse(
             f"unanimous baseline {before.band} → {after.band}; "
             "a clean baseline showed no variance, so any failure is new"
         )
-    if before.pass_rate - after.pass_rate > min_rate_drop + _RATE_EPSILON:
+    if before.pass_rate - after.pass_rate > min_rate_drop + _THRESHOLD_EPSILON:
         return f"pass rate {before.band} → {after.band} (drop > {min_rate_drop:.2f})"
 
     if before.kind == "continuous":
@@ -120,10 +127,11 @@ def _worse(
             after.mean < before.vmin if higher_better else after.mean > before.vmax
         )
         effect = abs(before.mean - after.mean)
-        if outside and effect > min_effect:
+        if outside and effect > min_effect + _THRESHOLD_EPSILON:
             return (
-                f"mean {before.mean:.3f} → {after.mean:.3f}, outside the baseline "
-                f"band [{before.vmin:.3f}–{before.vmax:.3f}]"
+                f"mean {before.mean:.3f} (n={before.n}) → {after.mean:.3f} "
+                f"(n={after.n}), outside the baseline band "
+                f"[{before.vmin:.3f}–{before.vmax:.3f}]"
             )
     return None
 
