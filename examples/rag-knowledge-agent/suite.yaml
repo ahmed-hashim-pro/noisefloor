@@ -3,8 +3,9 @@
 #   cd ../rag-knowledge-agent && pip install -e . && rag ingest sample_corpus
 #   noisefloor check examples/rag-knowledge-agent/suite.yaml
 #
-# Regenerating the committed baseline needs ANTHROPIC_API_KEY and roughly
-# 25 model calls (5 cases x 5 repeats). Reading it needs nothing.
+# No baseline is committed yet -- that capture is pending, blocked on having
+# an ANTHROPIC_API_KEY available. It needs roughly 25 model calls (5 cases x
+# 5 repeats) once it happens.
 #
 # The `allowed` lists below came from running rag-knowledge-agent's own
 # retrieval (the target project, not noisefloor) offline, no API key needed,

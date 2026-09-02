@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from noisefloor.scoring import validate_suite
 from noisefloor.suite import SuiteError, load_suite
 
 SUITE = """
@@ -107,3 +108,11 @@ def test_missing_file_is_a_suite_error(tmp_path: Path) -> None:
 def test_malformed_yaml_is_a_suite_error(tmp_path: Path) -> None:
     with pytest.raises(SuiteError):
         load_suite(write(tmp_path, "name: [unclosed"))
+
+
+def test_the_quickstart_example_suite_loads_and_validates() -> None:
+    """Regression guard for the README's opening command: this committed
+    suite must stay loadable and validate cleanly, not just have worked once."""
+    repo_root = Path(__file__).parent.parent
+    suite = load_suite(repo_root / "examples" / "quickstart" / "suite.yaml")
+    validate_suite(suite)

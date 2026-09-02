@@ -32,14 +32,17 @@ noisefloor check examples/rag-knowledge-agent/suite.yaml
 relative to the suite file itself, so this only works if `rag-knowledge-agent`
 lives as a sibling directory to this `noisefloor` checkout.
 
-## API key
+## No baseline is committed yet
 
-Reading the committed baseline needs nothing — no key, no network. Only
-*regenerating* it does: each `noisefloor check` or `noisefloor run` invokes
-the target once per case per repeat, which at this suite's defaults (5 cases
-x 5 repeats) is roughly 25 calls to whatever model `rag-knowledge-agent` is
-configured to use, and needs `ANTHROPIC_API_KEY` set in the environment
-`rag ask` runs in.
+This suite has no committed baseline `RunRecord`. Capturing one is pending —
+it needs `ANTHROPIC_API_KEY` set in the environment `rag ask` runs in, and
+costs roughly 25 model calls at this suite's defaults (5 cases x 5 repeats,
+one target invocation per case per repeat). Until that capture happens, this
+suite demonstrates the format and scorer choices, not a measured result.
+
+Once a baseline exists, comparing against it with `noisefloor diff` or a
+later `noisefloor check` needs nothing — no key, no network. Only
+*regenerating* the baseline does.
 
 ## The `allowed` lists
 

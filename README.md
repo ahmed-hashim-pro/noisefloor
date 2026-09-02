@@ -10,8 +10,13 @@ system that is unanswerable until you know how much the system moves on its own.
 something a regression when the delta clears it.
 
 ```
-noisefloor check evals/suite.yaml
+noisefloor check examples/quickstart/suite.yaml
 ```
+
+That runs against `examples/quickstart/target.py`, a canned two-line stand-in
+committed alongside it — no model, no API key, no network, no sibling
+checkout. It exists so this command works right after a clone; the real
+noise measurement lives in `examples/rag-knowledge-agent/`, below.
 
 ```
 <!-- MEASURED: filled in by Task 12 -->

@@ -1,8 +1,10 @@
 """Execute a suite, persist everything, and re-score without re-running.
 
 Raw stdout is stored for every repeat. That is what makes a corrected scorer
-free — ``rescore`` replays the stored outputs — and what lets the harness test
-its own diff and report layers against committed fixtures with no subprocess.
+free — ``rescore`` replays the stored outputs — and it is why ``RunRecord``,
+``CaseRun``, and ``Invocation`` are the same shape the tests build directly in
+Python (``tests/test_diff.py``'s helpers), with no subprocess, network, or
+committed fixture files.
 """
 
 from __future__ import annotations
