@@ -22,6 +22,10 @@ from noisefloor.suite import Suite
 from noisefloor.target import Invocation, invoke
 
 
+class RunRecordError(ValueError):
+    """A stored run cannot be reloaded because its files are inconsistent."""
+
+
 @dataclass(frozen=True)
 class CaseRun:
     case_id: str
@@ -81,6 +85,12 @@ class RunRecord:
         for case in self.cases:
             case_dir = paths.case_dir(self.run_id, case.case_id)
             case_dir.mkdir(parents=True, exist_ok=True)
+            # A run id is only second-resolution, so re-executing the same
+            # suite at the same started= with fewer repeats can reuse a run
+            # id. Without this, higher-numbered repeat files from the earlier
+            # write would survive and outnumber the new scores.json entries.
+            for stale in case_dir.glob("*.json"):
+                stale.unlink()
             for inv in case.invocations:
                 _write_json(case_dir / f"{inv.repeat}.json", asdict(inv))
             scores[case.case_id] = [
@@ -103,14 +113,20 @@ class RunRecord:
                 Invocation(**json.loads(p.read_text(encoding="utf-8")))
                 for p in sorted(case_dir.glob("*.json"), key=_repeat_index)
             ]
+            case_scores = scores.get(case_id, [])
+            if len(case_scores) != len(invocations):
+                raise RunRecordError(
+                    f"run {run_id!r} case {case_id!r}: {len(invocations)} "
+                    f"invocation(s) but {len(case_scores)} score list(s) — "
+                    "the stored run is inconsistent"
+                )
             cases.append(
                 CaseRun(
                     case_id=case_id,
                     definition_hash=entry["definition_hash"],
                     invocations=invocations,
                     scores=[
-                        [ScoreResult(**r) for r in repeat]
-                        for repeat in scores.get(case_id, [])
+                        [ScoreResult(**r) for r in repeat] for repeat in case_scores
                     ],
                 )
             )
@@ -224,8 +240,24 @@ def latest_run_id(paths: Paths, suite_name: str | None = None) -> str | None:
         return None
     candidates = sorted(p.name for p in paths.runs.iterdir() if p.is_dir())
     if suite_name is not None:
-        candidates = [c for c in candidates if f"-{suite_name}-" in c]
+        candidates = [c for c in candidates if _suite_name_of(c) == suite_name]
     return candidates[-1] if candidates else None
+
+
+def _suite_name_of(run_id: str) -> str | None:
+    """Recover the suite name from a run id of the form
+    ``<stamp>-<suite_name>-<hash>``.
+
+    The stamp is ``%Y%m%dT%H%M%SZ`` and the hash is hex, so neither can
+    contain a hyphen — but ``Suite.name`` has no such restriction, so a
+    plain substring check (``f"-{suite_name}-" in run_id``) would wrongly
+    match e.g. suite "demo" against a run id for suite "demo-extra". Split
+    off the hyphen-free stamp and hash first instead.
+    """
+    parts = run_id.split("-", 1)
+    if len(parts) < 2 or "-" not in parts[1]:
+        return None
+    return parts[1].rsplit("-", 1)[0]
 
 
 def _repeat_index(path: Path) -> int:

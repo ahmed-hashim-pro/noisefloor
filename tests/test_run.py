@@ -2,9 +2,12 @@ import json
 import sys
 from datetime import UTC, datetime
 
+import pytest
+
 from noisefloor.config import Paths
 from noisefloor.run import (
     RunRecord,
+    RunRecordError,
     execute,
     get_baseline,
     latest_run_id,
@@ -30,7 +33,7 @@ def test_repeats_can_be_overridden(simple_suite, paths) -> None:
     assert len(record.cases[0].invocations) == 2
 
 
-def test_run_id_is_sortable_and_self_describing(simple_suite, paths) -> None:
+def test_run_id_is_self_describing(simple_suite, paths) -> None:
     record = execute(simple_suite, paths=paths, started=FROZEN)
     assert record.run_id.startswith("20260902T103000Z-demo-")
 
@@ -156,3 +159,68 @@ def test_latest_run_id_is_the_newest(simple_suite, paths) -> None:
     )
     second.save(paths)
     assert latest_run_id(paths, "demo") == second.run_id
+
+
+def test_latest_run_id_does_not_match_a_suite_name_that_is_a_substring(
+    suite_factory, paths
+) -> None:
+    """A run id embeds the suite name raw, so "demo" must not match "demo-extra"."""
+    from datetime import timedelta
+
+    demo = suite_factory(
+        f"""
+        name: demo
+        target: {{command: ["{sys.executable}", "{FAKE}"]}}
+        cases:
+          - id: a
+            input: x
+            scorers: [json_valid]
+        """,
+        name="demo.yaml",
+    )
+    demo_extra = suite_factory(
+        f"""
+        name: demo-extra
+        target: {{command: ["{sys.executable}", "{FAKE}"]}}
+        cases:
+          - id: a
+            input: x
+            scorers: [json_valid]
+        """,
+        name="demo-extra.yaml",
+    )
+    demo_record = execute(demo, paths=paths, repeats=1, started=FROZEN)
+    demo_record.save(paths)
+    extra_record = execute(
+        demo_extra, paths=paths, repeats=1, started=FROZEN + timedelta(minutes=5)
+    )
+    extra_record.save(paths)
+    assert latest_run_id(paths, "demo") == demo_record.run_id
+
+
+def test_reexecuting_the_same_run_id_with_fewer_repeats_leaves_no_stale_files(
+    simple_suite, paths
+) -> None:
+    """A run id is only second-resolution, so this can happen with a frozen clock."""
+    first = execute(simple_suite, paths=paths, repeats=3, started=FROZEN)
+    first.save(paths)
+    second = execute(simple_suite, paths=paths, repeats=1, started=FROZEN)
+    assert second.run_id == first.run_id
+    second.save(paths)
+
+    loaded = RunRecord.load(paths, second.run_id)
+    assert len(loaded.cases[0].invocations) == 1
+    assert len(loaded.cases[0].scores) == 1
+
+
+def test_load_raises_when_invocation_and_score_counts_disagree(
+    simple_suite, paths
+) -> None:
+    record = execute(simple_suite, paths=paths, repeats=1, started=FROZEN)
+    record.save(paths)
+    case_dir = paths.case_dir(record.run_id, "alpha")
+    stray = json.loads((case_dir / "0.json").read_text())
+    (case_dir / "1.json").write_text(json.dumps({**stray, "repeat": 1}))
+
+    with pytest.raises(RunRecordError):
+        RunRecord.load(paths, record.run_id)
