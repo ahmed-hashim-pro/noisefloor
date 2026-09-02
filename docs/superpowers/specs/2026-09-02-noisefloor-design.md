@@ -77,7 +77,7 @@ testable and holds one responsibility.
 | `scoring.py` | Scorer registry, the nine built-ins, `ScoreResult` | `jsonpath` |
 | `run.py` | Orchestration (cases × repeats, optional `--jobs`), `RunRecord` persistence, re-score | `suite`, `target`, `scoring` |
 | `stats.py` | Per-case aggregation; the noise band; binary vs continuous split | — (pure functions over numbers) |
-| `diff.py` | Baseline vs candidate → `Verdict` | `stats`, `suite` |
+| `diff.py` | Baseline vs candidate → `Verdict` | `stats`, `run` |
 | `report.py` | Terminal, JSON, and markdown rendering | `diff` |
 | `cli.py` | Argparse subcommands, exit codes, strict stdout/stderr separation | all |
 
