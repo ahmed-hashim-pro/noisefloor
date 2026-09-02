@@ -15,8 +15,10 @@ noisefloor check examples/quickstart/suite.yaml
 
 That runs against `examples/quickstart/target.py`, a small canned stand-in
 committed alongside it — no model, no API key, no network, no sibling
-checkout. It exists so this command works right after a clone; the real
-noise measurement lives in `examples/rag-knowledge-agent/`, below.
+checkout. It exists so this command works right after a clone. The real
+noise measurement — of an actual RAG agent, in `examples/rag-knowledge-agent/`
+below — is still pending: it needs an API key to capture, which no one has
+run yet.
 
 ```
 <!-- MEASURED: filled in by Task 12 -->
