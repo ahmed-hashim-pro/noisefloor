@@ -8,7 +8,7 @@ from collections import Counter
 from noisefloor.diff import CaseDiff, Diff
 from noisefloor.run import RunRecord
 
-FORMATS = ("terminal", "json", "markdown")
+FORMATS: tuple[str, ...] = ("terminal", "json", "markdown")
 
 _MARK = {
     "broke": "BROKE",
@@ -62,16 +62,22 @@ def _terminal(diff: Diff) -> str:
     return "\n".join(lines)
 
 
+def _band_line(case: CaseDiff, key: str) -> str:
+    before = case.baseline.get(key)
+    after = case.candidate.get(key)
+    return f"{key}: {before.band if before else '—'} → {after.band if after else '—'}"
+
+
+def _band_keys(case: CaseDiff) -> list[str]:
+    return sorted(set(case.baseline) | set(case.candidate))
+
+
 def _bands(case: CaseDiff) -> list[str]:
-    lines = []
-    for key in sorted(set(case.baseline) | set(case.candidate)):
-        before = case.baseline.get(key)
-        after = case.candidate.get(key)
-        lines.append(
-            f"            {key}: "
-            f"{before.band if before else '—'} → {after.band if after else '—'}"
-        )
-    return lines
+    return [f"            {_band_line(case, key)}" for key in _band_keys(case)]
+
+
+def _band_summary(case: CaseDiff) -> str:
+    return "; ".join(_band_line(case, key) for key in _band_keys(case))
 
 
 def _json(diff: Diff) -> str:
@@ -118,9 +124,12 @@ def _markdown(diff: Diff) -> str:
         "| --- | --- | --- |",
     ]
     for case in diff.cases:
-        detail = case.note or "; ".join(
-            s.reason for s in case.scorers if s.verdict != "unchanged"
-        )
+        parts = [
+            case.note,
+            "; ".join(s.reason for s in case.scorers if s.verdict != "unchanged"),
+            _band_summary(case),
+        ]
+        detail = "; ".join(p for p in parts if p)
         lines.append(f"| `{case.case_id}` | {case.verdict} | {detail} |")
     if diff.warnings:
         lines.extend(["", *[f"> warning: {w}" for w in diff.warnings]])
