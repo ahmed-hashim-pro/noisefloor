@@ -1,6 +1,6 @@
 import pytest
 
-from noisefloor.diff import TargetChanged, diff_runs
+from noisefloor.diff import TargetChanged, _ok_rate, diff_runs
 from noisefloor.run import CaseRun, RunRecord
 from noisefloor.scoring import ScoreResult
 from noisefloor.target import Invocation
@@ -179,6 +179,37 @@ def mixed(case_id: str, oks: list[bool], *, dh: str = "h1") -> CaseRun:
     return CaseRun(
         case_id=case_id, definition_hash=dh, invocations=invocations, scores=scores
     )
+
+
+def test_fewer_repeats_at_the_same_success_rate_is_not_degradation() -> None:
+    """Issue #6: 5/5 and 2/2 are both a 100% success rate. A candidate that
+    simply ran fewer repeats than the baseline must not be read as
+    degradation just because its raw ok_count is smaller."""
+    d = diff_runs(
+        record(case("a", 5, 5), run_id="b"),
+        record(case("a", 2, 2)),
+    )
+    assert not any("degraded" in w for w in d.warnings)
+    assert "degraded" not in d.cases[0].note
+
+
+def test_a_genuine_rate_drop_still_warns_even_with_more_candidate_repeats() -> None:
+    """The fix must not become "raw counts never trigger the warning" -- a
+    real drop in success rate has to keep firing even when the candidate ran
+    *more* repeats than the baseline, which a naive "fewer repeats" special
+    case could miss."""
+    d = diff_runs(
+        record(case("a", 2, 2), run_id="b"),
+        record(mixed("a", [True, True, True, False, False]), run_id="c"),
+    )
+    assert any("degraded" in w for w in d.warnings)
+    assert "3/5" in d.cases[0].note and "2/2" in d.cases[0].note
+
+
+def test_ok_rate_of_zero_invocations_is_zero_not_a_zero_division_error() -> None:
+    """A case with no invocations on one side (denominator zero) must not
+    raise; treated as a 0% rate rather than undefined."""
+    assert _ok_rate(0, 0) == 0.0
 
 
 def test_partial_degradation_is_noted_and_warned_about() -> None:

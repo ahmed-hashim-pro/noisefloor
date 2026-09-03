@@ -146,7 +146,7 @@ def _compare_case(
     # even though the suite default (RunRecord.repeats) does not, so this is
     # checked per case rather than once for the whole run. It is reported
     # regardless of outcome, since it is a fact about how the case ran, not
-    # about whether the target succeeded -- see the ok-count note below for
+    # about whether the target succeeded -- see the ok-rate note below for
     # that, a different condition that can fire independently or alongside it.
     repeats_note = ""
     if len(before.invocations) != len(after.invocations):
@@ -200,8 +200,13 @@ def _compare_case(
     else:
         resolved = "unchanged"
 
+    # Rates, not raw counts: 2/2 and 5/5 are both 100%, so fewer candidate
+    # repeats alone must not read as degraded. (ok_count is > 0 on both sides
+    # by this point, so _ok_rate's zero-denominator guard can't fire here.)
     degraded_note = ""
-    if after.ok_count < before.ok_count:
+    before_rate = _ok_rate(before.ok_count, len(before.invocations))
+    after_rate = _ok_rate(after.ok_count, len(after.invocations))
+    if after_rate < before_rate:
         degraded_note = (
             f"{after.ok_count}/{len(after.invocations)} repeats ok in the "
             f"candidate, down from {before.ok_count}/{len(before.invocations)} "
@@ -217,6 +222,12 @@ def _compare_case(
         candidate=cand_agg,
         note=_join_notes(degraded_note, repeats_note),
     )
+
+
+def _ok_rate(ok_count: int, total: int) -> float:
+    """0.0 for zero invocations, rather than raising -- nothing to compare
+    should fail toward being noticed, not toward crashing."""
+    return ok_count / total if total else 0.0
 
 
 def _join_notes(*parts: str) -> str:
