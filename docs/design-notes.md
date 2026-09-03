@@ -153,6 +153,15 @@ to tell the two apart without reading the report body. Symmetrically, a case
 recovering from zero `ok` repeats to at least one is `fixed`, not merely
 `improved`.
 
+**Naming collision, not a design decision:** `CaseRun.outcome` above uses
+`degraded` for a per-run fact (some but not all repeats errored). `diff.py`
+separately warns `case 'x' degraded: ...` when a candidate's ok *rate* drops
+below its baseline's — a comparison across two runs, not a property of one.
+They're unrelated conditions that happen to share a word; a case can be
+`degraded` in the first sense on both sides of a diff and never trigger the
+second, or vice versa. Predates this note; recorded here rather than fixed
+by renaming either one.
+
 ## 7. Why YAML over TOML
 
 Suite files are prompts plus assertions, and prompts are usually multi-line

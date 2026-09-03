@@ -12,7 +12,13 @@ from typing import Literal
 
 from noisefloor.config import DEFAULT_MIN_EFFECT, DEFAULT_MIN_RATE_DROP
 from noisefloor.run import CaseRun, RunRecord
-from noisefloor.stats import ScorerAggregate, Significance, aggregate_case, compare
+from noisefloor.stats import (
+    _THRESHOLD_EPSILON,
+    ScorerAggregate,
+    Significance,
+    aggregate_case,
+    compare,
+)
 
 CaseVerdict = Literal[
     "regressed",
@@ -200,13 +206,18 @@ def _compare_case(
     else:
         resolved = "unchanged"
 
-    # Rates, not raw counts: 2/2 and 5/5 are both 100%, so fewer candidate
-    # repeats alone must not read as degraded. (ok_count is > 0 on both sides
-    # by this point, so _ok_rate's zero-denominator guard can't fire here.)
+    # Same two-clause shape as stats._worse, on the ok rate rather than the
+    # scorer pass rate -- a wobble the significance rule calls noise (e.g.
+    # 3/5 -> 2/5) must not be independently called degradation here just
+    # because it's a different "ok" axis. (ok_count is > 0 on both sides by
+    # this point, so _ok_rate's zero-denominator guard can't fire here.)
     degraded_note = ""
     before_rate = _ok_rate(before.ok_count, len(before.invocations))
     after_rate = _ok_rate(after.ok_count, len(after.invocations))
-    if after_rate < before_rate:
+    genuine_drop = (before_rate == 1.0 and after_rate < 1.0) or (
+        before_rate - after_rate > min_rate_drop + _THRESHOLD_EPSILON
+    )
+    if genuine_drop:
         degraded_note = (
             f"{after.ok_count}/{len(after.invocations)} repeats ok in the "
             f"candidate, down from {before.ok_count}/{len(before.invocations)} "

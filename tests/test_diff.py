@@ -212,6 +212,32 @@ def test_ok_rate_of_zero_invocations_is_zero_not_a_zero_division_error() -> None
     assert _ok_rate(0, 0) == 0.0
 
 
+def test_an_ok_rate_wobble_within_min_rate_drop_does_not_warn() -> None:
+    """3/5 -> 2/5 is a 0.20 drop, exactly DEFAULT_MIN_RATE_DROP -- the same
+    number stats.compare calls "within noise" for a scorer pass rate at
+    these exact counts. The ok-rate axis is not exempt from that same
+    tolerance just because it is a different "ok" (process success, not
+    scored correctness)."""
+    d = diff_runs(
+        record(mixed("a", [True, True, True, False, False]), run_id="b"),
+        record(mixed("a", [True, True, False, False, False]), run_id="c"),
+    )
+    assert not any("degraded" in w for w in d.warnings)
+    assert "degraded" not in d.cases[0].note
+
+
+def test_an_ok_rate_drop_from_a_unanimous_baseline_still_warns() -> None:
+    """5/5 -> 4/5 is the same 0.20-sized drop as the 3/5 -> 2/5 case above,
+    but here the magnitude isn't what decides it: the baseline was unanimous,
+    so stats._worse's own reasoning (a clean baseline showed no variance, so
+    any failure is new) fires unconditionally, regardless of drop size."""
+    d = diff_runs(
+        record(case("a", 5, 5), run_id="b"),
+        record(mixed("a", [True, True, True, True, False]), run_id="c"),
+    )
+    assert any("degraded" in w for w in d.warnings)
+
+
 def test_partial_degradation_is_noted_and_warned_about() -> None:
     """Two of five candidate repeats erroring must be visible even though the
     case does not `broke` and the exit code does not change for it alone."""
@@ -259,8 +285,12 @@ def test_an_env_difference_is_warned_about_not_refused() -> None:
 
 
 def test_mismatched_repeat_counts_are_warned_about() -> None:
+    """5/5 and 3/3 are both a 100% ok rate -- the repeat-count change is a
+    real, separate fact and must be warned about, but it must not also
+    trigger a spurious "degraded" warning (issue #6's exact shape)."""
     d = diff_runs(record(case("a", 5, 5), run_id="b"), record(case("a", 3, 3)))
     assert any("repeat" in w.lower() for w in d.warnings)
+    assert not any("degraded" in w for w in d.warnings)
 
 
 def test_a_per_case_repeat_override_is_warned_about_alone() -> None:

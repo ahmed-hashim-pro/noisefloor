@@ -160,7 +160,10 @@ outcome:
 
 **Errors are a third category, never a silent pass or fail.** A case with at
 least one `ok` repeat and at least one error is `degraded`; a case with zero
-`ok` repeats is `error`.
+`ok` repeats is `error`. (This is a per-run outcome on `CaseRun`, distinct
+from `diff.py`'s "degraded" warning, which compares ok rates *between* a
+baseline and candidate run — same word, two different things it's referring
+to; see design-notes.md §6.)
 
 ## 6. Scoring and the significance rule
 
