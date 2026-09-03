@@ -179,6 +179,104 @@ def test_continuous_rate_drop_reports_pass_counts_not_a_value_band() -> None:
     assert "3/5" in result.reason and "1/5" in result.reason
 
 
+# -- baseline is the fixed reference for the continuous range test ---------
+#
+# A degenerate *baseline* band is the strongest possible noise estimate
+# (zero observed spread), not the absence of one -- a difference from it
+# can't be noise. A degenerate *candidate* band, by contrast, says nothing
+# about the baseline's noise and must never be used as the reference. The
+# four cases below pin exactly that asymmetry.
+
+
+def test_baseline_spread_candidate_point_is_unchanged() -> None:
+    """The real incident, reproduced verbatim: retrieval is deterministic, so
+    the candidate emits one citation every repeat and has zero observed
+    spread. The baseline (which has real spread) is the only side the range
+    test may reference, so the candidate's degeneracy must not matter."""
+    baseline = agg_continuous([0.5965, 0.4374, 0.5965])
+    candidate = agg_continuous([0.5965, 0.5965, 0.5965])
+    assert compare(baseline, candidate).verdict == "unchanged"
+
+
+def test_both_sides_deterministic_large_drop_is_regressed() -> None:
+    """A perfectly reproducible system whose value collapses is a genuine
+    regression -- the zero-width baseline band is exactly what makes the
+    move undeniable, not what excuses it."""
+    baseline = agg_continuous([0.9, 0.9, 0.9])
+    candidate = agg_continuous([0.1, 0.1, 0.1])
+    assert compare(baseline, candidate).verdict == "regressed"
+
+
+def test_both_sides_deterministic_large_rise_is_improved() -> None:
+    """Mirror of the case above, on the good side of `direction`."""
+    baseline = agg_continuous([0.1, 0.1, 0.1])
+    candidate = agg_continuous([0.9, 0.9, 0.9])
+    assert compare(baseline, candidate).verdict == "improved"
+
+
+def test_baseline_spread_candidate_genuinely_collapsed_is_regressed() -> None:
+    """The fourth point in the acceptance matrix: a real collapse is still
+    caught when the baseline itself has spread."""
+    baseline = agg_continuous([0.50, 0.60, 0.55])
+    candidate = agg_continuous([0.05, 0.05, 0.05])
+    assert compare(baseline, candidate).verdict == "regressed"
+
+
+def test_an_explicit_min_effect_still_gates_a_move_from_a_deterministic_baseline() -> (
+    None
+):
+    """min_effect is checked before the range test runs, so it still applies
+    exactly as documented even when the baseline is degenerate."""
+    baseline = agg_continuous([0.9, 0.9, 0.9])
+    candidate = agg_continuous([0.1, 0.1, 0.1])
+    assert compare(baseline, candidate, min_effect=0.2).verdict == "regressed"
+    assert compare(candidate, baseline, min_effect=0.2).verdict == "improved"
+
+
+def test_min_effect_from_a_deterministic_baseline_still_respects_direction() -> None:
+    """A large effect from a degenerate baseline must not fire on an
+    *improving* move just because the magnitude clears min_effect."""
+    baseline = agg_continuous([0.1, 0.1, 0.1])
+    candidate = agg_continuous([0.9, 0.9, 0.9])
+    assert compare(baseline, candidate, min_effect=0.2).verdict == "improved"
+    assert compare(candidate, baseline, min_effect=0.2).verdict == "regressed"
+
+
+def test_min_effect_can_suppress_a_tiny_move_from_a_deterministic_baseline() -> None:
+    """ "Ignore drops under X" still means what it says when the baseline
+    happens to be a point rather than a range."""
+    baseline = agg_continuous([0.50, 0.50, 0.50])
+    candidate = agg_continuous([0.49, 0.49, 0.49])
+    assert compare(baseline, candidate).verdict == "regressed"
+    assert compare(baseline, candidate, min_effect=0.1).verdict == "unchanged"
+
+
+# -- an improved reason reads baseline-to-candidate, like everything else --
+
+
+def test_a_regressed_continuous_reason_reads_baseline_to_candidate() -> None:
+    """Locks in the direction of the unswapped call, so the mirrored fix
+    below can't silently break it."""
+    baseline = agg_continuous([0.50, 0.60, 0.55])
+    candidate = agg_continuous([0.30, 0.32, 0.31])
+    reason = compare(baseline, candidate).reason
+    assert reason.index("0.55") < reason.index("0.31")
+    assert "outside the baseline band" in reason
+
+
+def test_an_improved_continuous_reason_reads_baseline_to_candidate() -> None:
+    """The reported reason must narrate baseline → candidate. The band it
+    cites is always the baseline's -- there is no swapped call to produce a
+    "candidate band" version of this clause -- so "outside the baseline
+    band" is correct in both directions, unlike the two binary clauses."""
+    baseline = agg_continuous([0.30, 0.32, 0.31])
+    candidate = agg_continuous([0.70, 0.72, 0.71])
+    result = compare(baseline, candidate)
+    assert result.verdict == "improved"
+    assert result.reason.index("0.31") < result.reason.index("0.71")
+    assert "outside the baseline band [0.300–0.320]" in result.reason
+
+
 # -- refusing to guess -----------------------------------------------------
 
 

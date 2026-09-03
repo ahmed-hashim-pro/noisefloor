@@ -121,9 +121,16 @@ def _worse(
     after: ScorerAggregate,
     *,
     min_rate_drop: float,
-    min_effect: float,
 ) -> str | None:
-    """Reason `after` is worse than `before`, or None."""
+    """Reason `after`'s pass rate is worse than `before`'s, or None.
+
+    Covers only the two binary clauses (spec 6.3: unanimous-baseline and
+    rate-drop), which apply to every scorer kind via its pass rate and are
+    genuinely symmetric -- a delta past a threshold is the same test read
+    from either side. The continuous mean/range clause is deliberately not
+    here; see `_continuous_move` for why that one can't be evaluated by
+    calling this same helper with arguments swapped.
+    """
     if before.pass_rate == 1.0 and after.pass_rate < 1.0:
         return (
             f"unanimous baseline {before.rate_band} → {after.rate_band}; "
@@ -134,19 +141,53 @@ def _worse(
             f"pass rate {before.rate_band} → {after.rate_band} "
             f"(drop > {min_rate_drop:.2f})"
         )
+    return None
 
-    if before.kind == "continuous":
-        higher_better = before.direction == "higher_is_better"
-        outside = (
-            after.mean < before.vmin if higher_better else after.mean > before.vmax
-        )
-        effect = abs(before.mean - after.mean)
-        if outside and effect > min_effect + _THRESHOLD_EPSILON:
-            return (
-                f"mean {before.mean:.3f} (n={before.n}) → {after.mean:.3f} "
-                f"(n={after.n}), outside the baseline band "
-                f"[{before.vmin:.3f}–{before.vmax:.3f}]"
-            )
+
+def _continuous_move(
+    baseline: ScorerAggregate,
+    candidate: ScorerAggregate,
+    *,
+    min_effect: float,
+) -> Significance | None:
+    """The continuous range-plus-effect clause (spec 6.3), or None.
+
+    This is *not* implemented as a call to `_worse` with arguments swapped,
+    unlike the two binary clauses above -- do not "simplify" it back into
+    one. The baseline is the side deliberately measured as a noise
+    reference before anything changed; its observed band is the only one
+    either direction may test against. A zero-width baseline band is not
+    "no information" -- it is the *strongest* evidence available that a
+    difference is real, since zero observed noise means a difference can't
+    be noise. Using the candidate's own band as the reference (which a
+    swapped call produced for the improvement direction) was the actual
+    defect: the candidate's spread describes nothing about the baseline's
+    noise, so it must never stand in for it.
+    """
+    higher_better = baseline.direction == "higher_is_better"
+    effect = abs(baseline.mean - candidate.mean)
+    if effect <= min_effect + _THRESHOLD_EPSILON:
+        return None
+
+    reason = (
+        f"mean {baseline.mean:.3f} (n={baseline.n}) → {candidate.mean:.3f} "
+        f"(n={candidate.n}), outside the baseline band "
+        f"[{baseline.vmin:.3f}–{baseline.vmax:.3f}]"
+    )
+    worse = (
+        candidate.mean < baseline.vmin
+        if higher_better
+        else candidate.mean > baseline.vmax
+    )
+    if worse:
+        return Significance(baseline.key, "regressed", reason)
+    better = (
+        candidate.mean > baseline.vmax
+        if higher_better
+        else candidate.mean < baseline.vmin
+    )
+    if better:
+        return Significance(baseline.key, "improved", reason)
     return None
 
 
@@ -169,11 +210,19 @@ def compare(
             f"only {min(baseline.n, candidate.n)} scored repeat(s); noise unmeasured",
         )
 
-    limits = {"min_rate_drop": min_rate_drop, "min_effect": min_effect}
-    if (reason := _worse(baseline, candidate, **limits)) is not None:
+    if (reason := _worse(baseline, candidate, min_rate_drop=min_rate_drop)) is not None:
         return Significance(key, "regressed", reason)
-    if (reason := _worse(candidate, baseline, **limits)) is not None:
+    if (reason := _worse(candidate, baseline, min_rate_drop=min_rate_drop)) is not None:
         return Significance(key, "improved", reason)
+
+    # Baseline is the fixed reference in both directions here -- see
+    # _continuous_move's docstring for why this one clause isn't a mirrored
+    # _worse call like the two above it.
+    if baseline.kind == "continuous" and (
+        sig := _continuous_move(baseline, candidate, min_effect=min_effect)
+    ):
+        return sig
+
     return Significance(
         key, "unchanged", f"{baseline.band} → {candidate.band}, within noise"
     )
