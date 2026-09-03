@@ -21,7 +21,7 @@
 name: rag-knowledge-agent
 target:
   command: ["rag", "ask", "--json", "{{input}}"]
-  cwd: ../../../rag-knowledge-agent   # relative to this file
+  cwd: ../../../../rag-knowledge-agent   # relative to this file
   timeout_s: 120
 defaults:
   repeats: 5

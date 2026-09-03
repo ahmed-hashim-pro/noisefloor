@@ -28,9 +28,17 @@ cd ../noisefloor
 noisefloor check examples/rag-knowledge-agent/suite.yaml
 ```
 
-`target.cwd` in `suite.yaml` is `../../../rag-knowledge-agent`, resolved
-relative to the suite file itself, so this only works if `rag-knowledge-agent`
-lives as a sibling directory to this `noisefloor` checkout.
+`target.cwd` in `suite.yaml` is `../../../../rag-knowledge-agent`, resolved
+relative to the suite file itself. Adjust it to wherever your
+`rag-knowledge-agent` checkout actually lives; nothing else in the suite
+depends on the layout.
+
+Note that the committed baseline under `baseline/` records a `target_cwd` of
+`../../../rag-knowledge-agent` — one level shallower. That is not a mistake and
+it has not been corrected: it is what the path was when those runs were
+captured, and a stored run is a record of what happened, not a document to be
+kept tidy. Nothing compares `target_cwd` between runs, so the diff is
+unaffected.
 
 `rag` also has to be on the **PATH of the shell that runs `noisefloor`** —
 `target.command` invokes it by bare name (`rag ask --json ...`), not by
