@@ -215,8 +215,18 @@ def _cmd_baseline(args: argparse.Namespace, paths: Paths) -> int:
         print("no baselines recorded", file=sys.stderr)
         return CONFIG_ERROR
     for pointer in sorted(paths.baselines.glob("*.json")):
-        data = json.loads(pointer.read_text(encoding="utf-8"))
-        print(f"{pointer.stem}: {data['run_id']}  (set {data['set_at']})")
+        suite_name = pointer.stem
+        run_id = get_baseline(paths, suite_name)  # guards run_id; exit 3 on corruption
+        # set_baseline() always writes both keys, so a missing set_at is
+        # corruption too, not an absent optional field.
+        try:
+            set_at = json.loads(pointer.read_text(encoding="utf-8"))["set_at"]
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise RunRecordError(
+                f"baseline pointer for {suite_name!r} ({pointer}): corrupt or "
+                f"incomplete — {exc}"
+            ) from exc
+        print(f"{suite_name}: {run_id}  (set {set_at})")
     return 0
 
 
