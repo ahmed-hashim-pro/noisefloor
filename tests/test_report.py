@@ -6,7 +6,7 @@ import pytest
 
 from noisefloor.diff import CaseVerdict, diff_runs
 from noisefloor.report import _MARK, FORMATS, render, render_run_summary
-from tests.test_diff import case, record
+from tests.test_diff import case, mixed, record
 
 
 @pytest.fixture
@@ -37,6 +37,21 @@ def test_terminal_output_shows_the_numbers_not_just_the_verdict(sample) -> None:
     """The rule is a heuristic; the reader must be able to disagree with it."""
     assert "5/5" in render(sample, "terminal")
     assert "1/5" in render(sample, "terminal")
+
+
+def test_terminal_report_distinguishes_repeat_change_from_degradation() -> None:
+    """A case that both changed its repeat count and lost ok repeats must
+    show both facts in the rendered report, worded so a reader can tell which
+    is which -- not one swallowing the other."""
+    d = diff_runs(
+        record(case("a", 5, 5), case("b", 5, 5), run_id="base"),
+        record(case("a", 5, 5), mixed("b", [True, True, False]), run_id="cand"),
+    )
+    text = render(d, "terminal")
+    assert "repeat count changed: 5 in the baseline vs 3 in the candidate" in text
+    assert "2/3 repeats ok in the candidate, down from 5/5 in the baseline" in text
+    assert "warning: case 'b' repeat count changed:" in text
+    assert "warning: case 'b' degraded:" in text
 
 
 def test_json_output_is_machine_readable(sample) -> None:

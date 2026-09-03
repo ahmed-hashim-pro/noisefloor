@@ -125,9 +125,18 @@ class RunRecord:
         for entry in meta["cases"]:
             case_id = entry["case_id"]
             case_dir = paths.case_dir(run_id, case_id)
+            try:
+                # Guarded here rather than inside _repeat_index so the message
+                # can name the run and case, not just the bad filename.
+                repeat_files = sorted(case_dir.glob("*.json"), key=_repeat_index)
+            except ValueError as exc:
+                raise RunRecordError(
+                    f"run {run_id!r} case {case_id!r}: a repeat filename in "
+                    f"{case_dir} is not numeric — {exc}"
+                ) from exc
             invocations = [
                 Invocation(**json.loads(p.read_text(encoding="utf-8")))
-                for p in sorted(case_dir.glob("*.json"), key=_repeat_index)
+                for p in repeat_files
             ]
             case_scores = scores.get(case_id, [])
             if len(case_scores) != len(invocations):
@@ -249,7 +258,13 @@ def get_baseline(paths: Paths, suite_name: str) -> str | None:
     path = paths.baseline_file(suite_name)
     if not path.is_file():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))["run_id"]
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))["run_id"]
+    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise RunRecordError(
+            f"baseline pointer for {suite_name!r} ({path}): corrupt or "
+            f"incomplete — {exc}"
+        ) from exc
 
 
 def latest_run_id(paths: Paths, suite_name: str | None = None) -> str | None:
