@@ -1,0 +1,522 @@
+{
+  "charging-bays": [
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['high']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_in",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_in",
+        "value": 1.0
+      },
+      {
+        "detail": "citations[].score=0.5965",
+        "direction": "higher_is_better",
+        "key": "2:json_path_number",
+        "kind": "continuous",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_number",
+        "value": 0.5965
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['high']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_in",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_in",
+        "value": 1.0
+      },
+      {
+        "detail": "citations[].score=0.4374",
+        "direction": "higher_is_better",
+        "key": "2:json_path_number",
+        "kind": "continuous",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_number",
+        "value": 0.4374
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['high']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_in",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_in",
+        "value": 1.0
+      },
+      {
+        "detail": "citations[].score=0.5965",
+        "direction": "higher_is_better",
+        "key": "2:json_path_number",
+        "kind": "continuous",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_number",
+        "value": 0.5965
+      }
+    ]
+  ],
+  "error-code-409": [
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='409'",
+        "direction": "higher_is_better",
+        "key": "1:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      },
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "2:json_path_subset",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_subset",
+        "value": 1.0
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='409'",
+        "direction": "higher_is_better",
+        "key": "1:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      },
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "2:json_path_subset",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_subset",
+        "value": 1.0
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='409'",
+        "direction": "higher_is_better",
+        "key": "1:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      },
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "2:json_path_subset",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_subset",
+        "value": 1.0
+      }
+    ]
+  ],
+  "offline-behaviour": [
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['high']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_in",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_in",
+        "value": 1.0
+      },
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "2:json_path_subset",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_subset",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='offline'",
+        "direction": "higher_is_better",
+        "key": "3:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['high']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_in",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_in",
+        "value": 1.0
+      },
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "2:json_path_subset",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_subset",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='offline'",
+        "direction": "higher_is_better",
+        "key": "3:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['high']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_in",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_in",
+        "value": 1.0
+      },
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "2:json_path_subset",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_subset",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='offline'",
+        "direction": "higher_is_better",
+        "key": "3:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      }
+    ]
+  ],
+  "refuses-off-domain": [
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['low']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_equals",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_equals",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='flour'",
+        "direction": "higher_is_better",
+        "key": "2:not_contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "not_contains",
+        "value": 1.0
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['low']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_equals",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_equals",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='flour'",
+        "direction": "higher_is_better",
+        "key": "2:not_contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "not_contains",
+        "value": 1.0
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['low']",
+        "direction": "higher_is_better",
+        "key": "1:json_path_equals",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_equals",
+        "value": 1.0
+      },
+      {
+        "detail": "needle='flour'",
+        "direction": "higher_is_better",
+        "key": "2:not_contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "not_contains",
+        "value": 1.0
+      }
+    ]
+  ],
+  "refuses-parental-leave": [
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "needle=\"I don't know\"",
+        "direction": "higher_is_better",
+        "key": "1:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['low']",
+        "direction": "higher_is_better",
+        "key": "2:json_path_equals",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_equals",
+        "value": 1.0
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "needle=\"I don't know\"",
+        "direction": "higher_is_better",
+        "key": "1:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['low']",
+        "direction": "higher_is_better",
+        "key": "2:json_path_equals",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_equals",
+        "value": 1.0
+      }
+    ],
+    [
+      {
+        "detail": "",
+        "direction": "higher_is_better",
+        "key": "0:json_valid",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_valid",
+        "value": 1.0
+      },
+      {
+        "detail": "needle=\"I don't know\"",
+        "direction": "higher_is_better",
+        "key": "1:contains",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "contains",
+        "value": 1.0
+      },
+      {
+        "detail": "confidence=['low']",
+        "direction": "higher_is_better",
+        "key": "2:json_path_equals",
+        "kind": "binary",
+        "passed": true,
+        "reliable": true,
+        "type": "json_path_equals",
+        "value": 1.0
+      }
+    ]
+  ]
+}

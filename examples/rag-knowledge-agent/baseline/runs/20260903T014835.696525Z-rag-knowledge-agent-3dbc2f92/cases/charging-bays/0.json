@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "rag",
+    "ask",
+    "--json",
+    "How many charging bays should we provision for a two-shift operation?"
+  ],
+  "case_id": "charging-bays",
+  "duration_s": 35.28118541603908,
+  "exit_code": 0,
+  "outcome": "ok",
+  "parsed": {
+    "answer": "For a two-shift operation, Acme recommends provisioning one bay for every two robots. [sample_corpus/product-specs.md:Acme Robotics — Product Specifications > Dockyard-2 Charging Station > Capacity and Footprint]",
+    "citations": [
+      {
+        "heading": "Acme Robotics — Product Specifications > Dockyard-2 Charging Station > Capacity and Footprint",
+        "score": 0.5965,
+        "source": "sample_corpus/product-specs.md"
+      }
+    ],
+    "confidence": "high"
+  },
+  "repeat": 0,
+  "stderr": "",
+  "stdout": "{\n  \"answer\": \"For a two-shift operation, Acme recommends provisioning one bay for every two robots. [sample_corpus/product-specs.md:Acme Robotics — Product Specifications > Dockyard-2 Charging Station > Capacity and Footprint]\",\n  \"citations\": [\n    {\n      \"source\": \"sample_corpus/product-specs.md\",\n      \"heading\": \"Acme Robotics — Product Specifications > Dockyard-2 Charging Station > Capacity and Footprint\",\n      \"score\": 0.5965\n    }\n  ],\n  \"confidence\": \"high\"\n}\n"
+}

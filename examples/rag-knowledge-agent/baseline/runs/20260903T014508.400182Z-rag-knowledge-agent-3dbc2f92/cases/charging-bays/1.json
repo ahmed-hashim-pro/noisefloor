@@ -1,0 +1,31 @@
+{
+  "argv": [
+    "rag",
+    "ask",
+    "--json",
+    "How many charging bays should we provision for a two-shift operation?"
+  ],
+  "case_id": "charging-bays",
+  "duration_s": 12.573504582978785,
+  "exit_code": 0,
+  "outcome": "ok",
+  "parsed": {
+    "answer": "For a two-shift operation, Acme recommends provisioning one bay for every two robots [sample_corpus/product-specs.md:Acme Robotics — Product Specifications > Dockyard-2 Charging Station > Capacity and Footprint]. If you follow this ratio but still see robots queueing at docks, the likely cause is an auto-return threshold set too high — robots returning at 40% state of charge create artificial contention [sample_corpus/faq.md:Frequently Asked Questions > Fleet Operations > How many charging bays do we need?].",
+    "citations": [
+      {
+        "heading": "Acme Robotics — Product Specifications > Dockyard-2 Charging Station > Capacity and Footprint",
+        "score": 0.5965,
+        "source": "sample_corpus/product-specs.md"
+      },
+      {
+        "heading": "Frequently Asked Questions > Fleet Operations > How many charging bays do we need?",
+        "score": 0.4374,
+        "source": "sample_corpus/faq.md"
+      }
+    ],
+    "confidence": "high"
+  },
+  "repeat": 1,
+  "stderr": "",
+  "stdout": "{\n  \"answer\": \"For a two-shift operation, Acme recommends provisioning one bay for every two robots [sample_corpus/product-specs.md:Acme Robotics — Product Specifications > Dockyard-2 Charging Station > Capacity and Footprint]. If you follow this ratio but still see robots queueing at docks, the likely cause is an auto-return threshold set too high — robots returning at 40% state of charge create artificial contention [sample_corpus/faq.md:Frequently Asked Questions > Fleet Operations > How many charging bays do we need?].\",\n  \"citations\": [\n    {\n      \"source\": \"sample_corpus/product-specs.md\",\n      \"heading\": \"Acme Robotics — Product Specifications > Dockyard-2 Charging Station > Capacity and Footprint\",\n      \"score\": 0.5965\n    },\n    {\n      \"source\": \"sample_corpus/faq.md\",\n      \"heading\": \"Frequently Asked Questions > Fleet Operations > How many charging bays do we need?\",\n      \"score\": 0.4374\n    }\n  ],\n  \"confidence\": \"high\"\n}\n"
+}

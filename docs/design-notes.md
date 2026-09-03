@@ -182,7 +182,103 @@ tool exists to run.
 
 ## 8. Measured: run-to-run variance of a real RAG agent
 
-<!-- MEASURED: filled in by Task 12 -->
+Captured against the fixture in `examples/rag-knowledge-agent/`:
+[rag-knowledge-agent](https://github.com/ahmed-hashim-pro/rag-knowledge-agent),
+model `claude-sonnet-4-6`, no `temperature` set, over a corpus of 44 chunks
+from 5 files. Two captures — a baseline, then the identical suite against a
+target that had not changed at all — each at 3 repeats per case rather than
+the suite's default of 5, to limit API spend: 5 cases x 3 repeats x 2
+captures = 30 model calls. That thinner N buys a coarser noise estimate than
+the suite's own default would; said plainly rather than left unremarked. The
+baseline capture ran 15 calls in 3 minutes 9 seconds wall clock, all 5 cases
+`ok`.
+
+The result: `5 unchanged`, exit `0`, no warnings — 15 binary scorer
+instances all stable at 3/3 -> 3/3, and one continuous scorer
+(`json_path_number` on `charging-bays`) the only thing that moved, from
+`0.543 [0.437–0.597] n=3` to `0.597 [0.597–0.597] n=3`. The raw stored output
+shows why: retrieval is exactly deterministic — `product-specs.md` scores
+0.5965 on every repeat, `faq.md` 0.4374 on every repeat it appears — and what
+moved was how many citations the model chose to emit, not what retrieval
+returned. The scorer aggregates with `min`, so the one extra citation pulled
+the observed band down.
+
+The spec's own falsifiable prediction — prose varies, structure (`confidence`,
+`citations[].source`) does not, because sampling happens at the API default
+while retrieval is deterministic — held on the structural half and was never
+actually exercised on the prose half: no scorer here can distinguish a stable
+answer from a reworded one, since the assertions (`contains "409"`, and
+similar) are substring checks robust to rewording by construction. That is a
+gap in the suite's coverage, not evidence that the prose was stable. The
+variance that did show up came from neither predicted axis — it came from
+citation count, a third source the prediction did not name.
+
+### What the measurement found in the tool
+
+This is the more important half of this section, because it is a case of the
+theory in §2 and §3 meeting a real system and a real bug surviving past both.
+
+The first run of the second capture did not report 5 unchanged. It reported
+`1 improved, 4 unchanged` on `charging-bays` — `noisefloor` claiming a change
+on a system that had not changed, in the *improvement* direction. A false
+positive is a false positive regardless of which direction it points, and
+this is the exact failure mode the whole significance-rule design exists to
+prevent.
+
+The cause was the continuous range clause (§2, spec 6.3) sharing plumbing
+with the two binary clauses. Both binary regressions are implemented as a
+single mirrored call, `_worse(before, after)`, called once each way to get
+the regressed and improved verdicts — correct there, because a pass-rate
+delta past a threshold reads the same from either side, with no asymmetric
+"reference" role for either aggregate. The continuous clause was implemented
+the same way, and that is where it broke: on this capture the candidate's
+three citation-score values were all identical (`0.5965` x 3), so the
+candidate's own observed band had zero width. The mirrored call put that
+zero-width *candidate* band in the reference role for the improvement
+direction, and against a single-point band, any baseline value at all reads
+as "outside" it. This is the identical degenerate-range failure that
+motivated splitting the binary rule in the first place — a rule built on
+"outside the observed band" breaks whenever the wrong side's band happens to
+collapse to a point. The continuous rule had the same hole from the start; it
+just took a sample landing with zero spread to surface it, which is exactly
+what happened on `charging-bays`'s candidate side.
+
+Fixed in `ade90b8` by pulling the continuous clause out of `_worse` into its
+own function, `_continuous_move`, which always tests the candidate's mean
+against the **baseline's** observed band, in both directions, and never
+substitutes the candidate's own spread for it — because the baseline is the
+side deliberately measured as the noise reference; only its band means
+anything as a yardstick. A first attempt at this fix went further and
+refused to call anything significant off *any* zero-width band, on either
+side. That overcorrected: it made a deterministic `0.9 -> 0.1` collapse read
+as `unchanged`, which is worse than the bug it fixed, because a zero-width
+*baseline* band is not an absence of information — it is the strongest
+evidence available. If the baseline never moved across its repeats, a
+candidate difference cannot be attributed to sampling noise, since there was
+no sampling noise observed to attribute it to. The final version keeps that
+distinction: a degenerate baseline band is decisive; a degenerate candidate
+band must never stand in for it.
+
+Two things are worth drawing out beyond the fix itself. First, ten review
+passes and 182 tests did not surface this — one 15-call capture against a
+real system did. Coverage built entirely from hand-constructed fixtures
+shares whatever blind spot the person constructing them has; nobody wrote a
+test where the candidate happened to be a repeated point, because nobody
+was looking for that shape until a real target produced it. Second,
+validating the fix cost zero additional API calls: every raw output from
+both captures was already stored under `.noisefloor/runs/` (§5) before the
+bug was found, so confirming the fix was `noisefloor diff` re-running the
+corrected rule against runs that had already been paid for. The cache
+described in §5 as saving money on scorer iteration turned out to save it
+identically on statistics-engine iteration — it paid for itself the first
+time this project needed to debug itself against real data.
+
+Also settled by this capture: `refuses-parental-leave` retrieves at a top
+score of 0.436, above the agent's 0.35 confidence floor, so whether it would
+gate to the canned refusal was a genuine open question, not a safe bet (see
+the comment that carried this in `examples/rag-knowledge-agent/suite.yaml`
+until this measurement). Measured: it refuses cleanly — `low` confidence,
+zero citations, 3/3 on every scorer, every repeat.
 
 ## 9. Deliberately missing
 

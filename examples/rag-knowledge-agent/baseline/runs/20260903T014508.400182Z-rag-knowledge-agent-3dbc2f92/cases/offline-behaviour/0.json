@@ -1,0 +1,41 @@
+{
+  "argv": [
+    "rag",
+    "ask",
+    "--json",
+    "A Meridian-3 has stopped reporting. How long can it keep working\noffline, and how would I detect that from the Fleet Control API?\n"
+  ],
+  "case_id": "offline-behaviour",
+  "duration_s": 21.945367750013247,
+  "exit_code": 0,
+  "outcome": "ok",
+  "parsed": {
+    "answer": "A Meridian-3 can keep working offline for up to **12 minutes** — the fixed offline autonomy window buffered in firmware. When the buffered queue is exhausted or the window ends (whichever comes first), the robot performs a safe-park. This window is not configurable. [sample_corpus/product-specs.md:Acme Robotics — Product Specifications > Meridian-3 Autonomous Mobile Robot > Offline Autonomy]\n\nTo detect this from the Fleet Control API:\n\n1. **Watch `link_state`**: poll `GET /robots/{robot_id}/telemetry`. A value of `offline` means no report has been received for more than 30 seconds. [sample_corpus/api-reference.md:Fleet Control API Reference > Fleet Telemetry > GET /robots/{robot_id}/telemetry]\n\n2. **Track `offline_seconds`**: this field counts up from the last successful report. When it crosses 12 minutes (720 seconds), a safe-park has almost certainly occurred — the robot makes that call on board, so Fleet Control cannot confirm it while the robot is offline. [sample_corpus/api-reference.md:Fleet Control API Reference > Fleet Telemetry > GET /robots/{robot_id}/telemetry] [sample_corpus/product-specs.md:Acme Robotics — Product Specifications > Meridian-3 Autonomous Mobile Robot > Offline Autonomy]\n\n3. **Listen for webhooks**: you'll first receive a `robot.link_lost` event and see `link_state` flip to `offline`. On reconnect, `robot.link_restored` fires, and if the robot did safe-park, a `robot.safe_parked` event follows and `beacon` reads `amber`. [sample_corpus/faq.md:Frequently Asked Questions > Fleet Operations > What happens during a network outage?]\n\n4. **Amber beacon persistence**: if the beacon stays amber for more than one minute after the link returns, the robot needs a physical check. [sample_corpus/support-runbook.md:Support Runbook > Many Robots Offline at Once]",
+    "citations": [
+      {
+        "heading": "Acme Robotics — Product Specifications > Meridian-3 Autonomous Mobile Robot > Offline Autonomy",
+        "score": 0.5391,
+        "source": "sample_corpus/product-specs.md"
+      },
+      {
+        "heading": "Fleet Control API Reference > Fleet Telemetry > GET /robots/{robot_id}/telemetry",
+        "score": 0.4686,
+        "source": "sample_corpus/api-reference.md"
+      },
+      {
+        "heading": "Frequently Asked Questions > Fleet Operations > What happens during a network outage?",
+        "score": 0.6467,
+        "source": "sample_corpus/faq.md"
+      },
+      {
+        "heading": "Support Runbook > Many Robots Offline at Once",
+        "score": 0.593,
+        "source": "sample_corpus/support-runbook.md"
+      }
+    ],
+    "confidence": "high"
+  },
+  "repeat": 0,
+  "stderr": "",
+  "stdout": "{\n  \"answer\": \"A Meridian-3 can keep working offline for up to **12 minutes** — the fixed offline autonomy window buffered in firmware. When the buffered queue is exhausted or the window ends (whichever comes first), the robot performs a safe-park. This window is not configurable. [sample_corpus/product-specs.md:Acme Robotics — Product Specifications > Meridian-3 Autonomous Mobile Robot > Offline Autonomy]\\n\\nTo detect this from the Fleet Control API:\\n\\n1. **Watch `link_state`**: poll `GET /robots/{robot_id}/telemetry`. A value of `offline` means no report has been received for more than 30 seconds. [sample_corpus/api-reference.md:Fleet Control API Reference > Fleet Telemetry > GET /robots/{robot_id}/telemetry]\\n\\n2. **Track `offline_seconds`**: this field counts up from the last successful report. When it crosses 12 minutes (720 seconds), a safe-park has almost certainly occurred — the robot makes that call on board, so Fleet Control cannot confirm it while the robot is offline. [sample_corpus/api-reference.md:Fleet Control API Reference > Fleet Telemetry > GET /robots/{robot_id}/telemetry] [sample_corpus/product-specs.md:Acme Robotics — Product Specifications > Meridian-3 Autonomous Mobile Robot > Offline Autonomy]\\n\\n3. **Listen for webhooks**: you'll first receive a `robot.link_lost` event and see `link_state` flip to `offline`. On reconnect, `robot.link_restored` fires, and if the robot did safe-park, a `robot.safe_parked` event follows and `beacon` reads `amber`. [sample_corpus/faq.md:Frequently Asked Questions > Fleet Operations > What happens during a network outage?]\\n\\n4. **Amber beacon persistence**: if the beacon stays amber for more than one minute after the link returns, the robot needs a physical check. [sample_corpus/support-runbook.md:Support Runbook > Many Robots Offline at Once]\",\n  \"citations\": [\n    {\n      \"source\": \"sample_corpus/product-specs.md\",\n      \"heading\": \"Acme Robotics — Product Specifications > Meridian-3 Autonomous Mobile Robot > Offline Autonomy\",\n      \"score\": 0.5391\n    },\n    {\n      \"source\": \"sample_corpus/api-reference.md\",\n      \"heading\": \"Fleet Control API Reference > Fleet Telemetry > GET /robots/{robot_id}/telemetry\",\n      \"score\": 0.4686\n    },\n    {\n      \"source\": \"sample_corpus/faq.md\",\n      \"heading\": \"Frequently Asked Questions > Fleet Operations > What happens during a network outage?\",\n      \"score\": 0.6467\n    },\n    {\n      \"source\": \"sample_corpus/support-runbook.md\",\n      \"heading\": \"Support Runbook > Many Robots Offline at Once\",\n      \"score\": 0.593\n    }\n  ],\n  \"confidence\": \"high\"\n}\n"
+}
