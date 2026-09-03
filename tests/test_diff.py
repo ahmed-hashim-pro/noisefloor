@@ -232,6 +232,52 @@ def test_mismatched_repeat_counts_are_warned_about() -> None:
     assert any("repeat" in w.lower() for w in d.warnings)
 
 
+def test_a_per_case_repeat_override_is_warned_about_alone() -> None:
+    """RunRecord.repeats is the suite-level default; two runs can share it
+    (here both 5, taken from case "a") while a single case's `repeats:`
+    override differs between baseline and candidate. That must still surface
+    per case -- a suite-level comparison alone would miss it entirely."""
+    d = diff_runs(
+        record(case("a", 5, 5), case("b", 3, 3), run_id="b"),
+        record(case("a", 5, 5), case("b", 5, 5)),
+    )
+    b = next(c for c in d.cases if c.case_id == "b")
+    assert "repeat count changed: 3 in the baseline vs 5 in the candidate" in b.note
+    assert any("'b'" in w and "repeat count changed" in w for w in d.warnings)
+
+
+def test_repeat_count_change_and_ok_count_degradation_are_distinguishable() -> None:
+    """A case can both change its repeat count and lose ok repeats between
+    baseline and candidate -- an intentional change to how many times it runs,
+    versus partial degradation of the target under test. These are different
+    conditions and neither may hide the other."""
+    d = diff_runs(
+        record(case("a", 5, 5), case("b", 5, 5), run_id="b"),
+        record(case("a", 5, 5), mixed("b", [True, True, False])),
+    )
+    b = next(c for c in d.cases if c.case_id == "b")
+    assert "repeat count changed: 5 in the baseline vs 3 in the candidate" in b.note
+    assert "2/3 repeats ok in the candidate, down from 5/5 in the baseline" in b.note
+
+    repeat_warnings = [w for w in d.warnings if "repeat count changed" in w]
+    degraded_warnings = [w for w in d.warnings if "degraded" in w]
+    assert len(repeat_warnings) == 1 and "'b'" in repeat_warnings[0]
+    assert len(degraded_warnings) == 1 and "'b'" in degraded_warnings[0]
+
+
+def test_a_broken_case_still_reports_a_repeat_count_change() -> None:
+    """`broke` and a repeat-count change are independent facts about a case
+    and can co-occur; the note must carry both, not just whichever the early
+    `broke` return happens to produce."""
+    d = diff_runs(
+        record(case("a", 5, 5), run_id="b"), record(case("a", 0, 3, ok=False))
+    )
+    c = d.cases[0]
+    assert c.verdict == "broke"
+    assert "every repeat failed" in c.note
+    assert "repeat count changed: 5 in the baseline vs 3 in the candidate" in c.note
+
+
 def test_cases_are_ordered_worst_first() -> None:
     d = diff_runs(
         record(case("a", 5, 5), case("b", 5, 5), case("c", 5, 5), run_id="b"),

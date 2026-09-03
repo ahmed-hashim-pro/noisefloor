@@ -98,12 +98,6 @@ def diff_runs(
     if baseline.env != candidate.env:
         warnings.append(f"target env changed: {_env_diff(baseline.env, candidate.env)}")
 
-    if baseline.repeats != candidate.repeats:
-        warnings.append(
-            f"repeat counts differ ({baseline.repeats} vs {candidate.repeats}); "
-            "the comparison is wider than it looks"
-        )
-
     before, after = baseline.case_by_id, candidate.case_by_id
     cases: list[CaseDiff] = []
 
@@ -148,12 +142,34 @@ def _compare_case(
         warnings.append(f"case {case_id!r} was redefined since the baseline; excluded")
         return CaseDiff(case_id, "redefined", note="case definition changed")
 
+    # A per-case `repeats:` override can change between baseline and candidate
+    # even though the suite default (RunRecord.repeats) does not, so this is
+    # checked per case rather than once for the whole run. It is reported
+    # regardless of outcome, since it is a fact about how the case ran, not
+    # about whether the target succeeded -- see the ok-count note below for
+    # that, a different condition that can fire independently or alongside it.
+    repeats_note = ""
+    if len(before.invocations) != len(after.invocations):
+        repeats_note = (
+            f"repeat count changed: {len(before.invocations)} in the baseline "
+            f"vs {len(after.invocations)} in the candidate"
+        )
+        warnings.append(f"case {case_id!r} {repeats_note}")
+
     if before.ok_count > 0 and after.ok_count == 0:
-        return CaseDiff(case_id, "broke", note=_error_note(after))
+        return CaseDiff(
+            case_id, "broke", note=_join_notes(_error_note(after), repeats_note)
+        )
     if before.ok_count == 0 and after.ok_count > 0:
-        return CaseDiff(case_id, "fixed", note="the target now succeeds")
+        return CaseDiff(
+            case_id, "fixed", note=_join_notes("the target now succeeds", repeats_note)
+        )
     if before.ok_count == 0 and after.ok_count == 0:
-        return CaseDiff(case_id, "unchanged", note="the target errored on both sides")
+        return CaseDiff(
+            case_id,
+            "unchanged",
+            note=_join_notes("the target errored on both sides", repeats_note),
+        )
 
     base_agg = aggregate_case(before.scores)
     cand_agg = aggregate_case(after.scores)
@@ -184,14 +200,14 @@ def _compare_case(
     else:
         resolved = "unchanged"
 
-    note = ""
+    degraded_note = ""
     if after.ok_count < before.ok_count:
-        note = (
+        degraded_note = (
             f"{after.ok_count}/{len(after.invocations)} repeats ok in the "
             f"candidate, down from {before.ok_count}/{len(before.invocations)} "
             "in the baseline"
         )
-        warnings.append(f"case {case_id!r} degraded: {note}")
+        warnings.append(f"case {case_id!r} degraded: {degraded_note}")
 
     return CaseDiff(
         case_id=case_id,
@@ -199,8 +215,12 @@ def _compare_case(
         scorers=significances,
         baseline=base_agg,
         candidate=cand_agg,
-        note=note,
+        note=_join_notes(degraded_note, repeats_note),
     )
+
+
+def _join_notes(*parts: str) -> str:
+    return "; ".join(p for p in parts if p)
 
 
 def _error_note(case: CaseRun) -> str:
