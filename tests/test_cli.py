@@ -257,6 +257,58 @@ def test_run_json_missing_a_required_key_exits_three_not_one(
     assert "corrupt or incomplete" in capsys.readouterr().err
 
 
+def test_malformed_baseline_pointer_exits_three_not_one(tmp_path: Path, capsys) -> None:
+    """A corrupt baseline pointer is a configuration error, not a regression —
+    reading it as exit 1 would tell CI the candidate caused a regression when
+    nothing was actually compared."""
+    suite = write_suite(tmp_path)
+    run(tmp_path, "check", str(suite))  # adopts a baseline
+    paths = Paths(tmp_path / ".noisefloor")
+    paths.baseline_file("demo").write_text("{not valid json")
+    capsys.readouterr()
+
+    assert run(tmp_path, "check", str(suite)) == 3
+    err = capsys.readouterr().err
+    assert "corrupt or incomplete" in err
+    assert "demo" in err
+
+
+def test_baseline_pointer_missing_run_id_exits_three_not_one(
+    tmp_path: Path, capsys
+) -> None:
+    """Valid JSON that is missing `run_id` is still a corrupt pointer, not a
+    clean run and not a raw traceback."""
+    suite = write_suite(tmp_path)
+    run(tmp_path, "check", str(suite))  # adopts a baseline
+    paths = Paths(tmp_path / ".noisefloor")
+    paths.baseline_file("demo").write_text(
+        json.dumps({"set_at": "2026-01-01T00:00:00+00:00"})
+    )
+    capsys.readouterr()
+
+    assert run(tmp_path, "check", str(suite)) == 3
+    err = capsys.readouterr().err
+    assert "corrupt or incomplete" in err
+    assert "demo" in err
+
+
+def test_non_numeric_repeat_filename_exits_three_not_one(
+    tmp_path: Path, capsys
+) -> None:
+    """A stray non-numeric .json file in a case directory is a configuration
+    error naming the offending case, not a raw traceback."""
+    suite = write_suite(tmp_path)
+    run(tmp_path, "run", str(suite))
+    paths = Paths(tmp_path / ".noisefloor")
+    run_id = latest_run_id(paths)
+    (paths.case_dir(run_id, "alpha") / "stray.json").write_text("{}")
+
+    assert run(tmp_path, "show", run_id) == 3
+    err = capsys.readouterr().err
+    assert "alpha" in err
+    assert "not numeric" in err
+
+
 # -- plumbing --------------------------------------------------------------
 
 
