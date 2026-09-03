@@ -1,0 +1,51 @@
+{
+  "cases": [
+    {
+      "case_id": "offline-behaviour",
+      "definition_hash": "38288fee76f666f8",
+      "outcome": "ok",
+      "repeats": 3
+    },
+    {
+      "case_id": "charging-bays",
+      "definition_hash": "56ee515ddc86c6cc",
+      "outcome": "ok",
+      "repeats": 3
+    },
+    {
+      "case_id": "error-code-409",
+      "definition_hash": "467a286d73279523",
+      "outcome": "ok",
+      "repeats": 3
+    },
+    {
+      "case_id": "refuses-parental-leave",
+      "definition_hash": "e52c53289ac85ddf",
+      "outcome": "ok",
+      "repeats": 3
+    },
+    {
+      "case_id": "refuses-off-domain",
+      "definition_hash": "b8f5ea05a2d8fd60",
+      "outcome": "ok",
+      "repeats": 3
+    }
+  ],
+  "env": {},
+  "finished_at": "2026-09-03T01:48:17.398350+00:00",
+  "git_sha": "ee4aa5d",
+  "harness_version": "0.1.0",
+  "jobs": 1,
+  "repeats": 3,
+  "run_id": "20260903T014508.400182Z-rag-knowledge-agent-3dbc2f92",
+  "started_at": "2026-09-03T01:45:08.400182+00:00",
+  "suite_hash": "3dbc2f926a2ebd29",
+  "suite_name": "rag-knowledge-agent",
+  "target_command": [
+    "rag",
+    "ask",
+    "--json",
+    "{{input}}"
+  ],
+  "target_cwd": "../../../rag-knowledge-agent"
+}

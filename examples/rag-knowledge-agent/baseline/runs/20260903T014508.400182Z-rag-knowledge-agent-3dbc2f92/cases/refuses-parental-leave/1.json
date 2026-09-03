@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "rag",
+    "ask",
+    "--json",
+    "What is Acme Robotics' parental leave policy?"
+  ],
+  "case_id": "refuses-parental-leave",
+  "duration_s": 9.82852758304216,
+  "exit_code": 0,
+  "outcome": "ok",
+  "parsed": {
+    "answer": "I don't know — the indexed documents don't contain enough relevant information to answer that.",
+    "citations": [],
+    "confidence": "low"
+  },
+  "repeat": 1,
+  "stderr": "",
+  "stdout": "{\n  \"answer\": \"I don't know — the indexed documents don't contain enough relevant information to answer that.\",\n  \"citations\": [],\n  \"confidence\": \"low\"\n}\n"
+}

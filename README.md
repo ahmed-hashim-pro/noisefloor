@@ -17,12 +17,18 @@ That runs against `examples/quickstart/target.py`, a small canned stand-in
 committed alongside it — no model, no API key, no network, no sibling
 checkout. It exists so this command works right after a clone. The real
 noise measurement — of an actual RAG agent, in `examples/rag-knowledge-agent/`
-below — is still pending: it needs an API key to capture, which no one has
-run yet.
+below — has now been captured: 5 cases, 3 repeats each, against
+`claude-sonnet-4-6` with no `temperature` set.
 
 ```
-<!-- MEASURED: filled in by Task 12 -->
+5 unchanged
+exit 0
+no warnings
 ```
+
+See ["Measured: how noisy is a real RAG agent?"](#measured-how-noisy-is-a-real-rag-agent)
+below for the per-scorer bands, what actually varied, and a false positive
+the capture found in `noisefloor` itself.
 
 ## How it works
 
@@ -124,9 +130,110 @@ already paid for. It is also how this project's own test suite stays key-free.
 
 `examples/rag-knowledge-agent/` points at
 [rag-knowledge-agent](https://github.com/ahmed-hashim-pro/rag-knowledge-agent),
-unmodified.
+unmodified. Model `claude-sonnet-4-6`, no `temperature` set, so it samples at
+the API default. Corpus: 44 chunks from 5 files.
 
-<!-- MEASURED: filled in by Task 12 -->
+Two captures — a baseline, then the identical suite against a target that had
+not changed at all — each at **3 repeats per case rather than the suite's
+default of 5, to limit API spend**: 5 cases x 3 repeats x 2 captures = **30
+model calls** total. Said plainly: a thinner N gives a coarser noise estimate
+than the suite's own default would.
+
+The baseline capture: 15 calls, **3 minutes 9 seconds** wall clock, all 5
+cases `ok`.
+
+```
+5 unchanged
+exit 0
+no warnings
+```
+
+Per scorer, baseline band -> candidate band:
+
+```
+charging-bays  [unchanged]
+   0:json_valid             3/3  ->  3/3
+   1:json_path_in           3/3  ->  3/3
+   2:json_path_number       0.543 [0.437–0.597] n=3  ->  0.597 [0.597–0.597] n=3
+
+error-code-409  [unchanged]
+   0:json_valid             3/3  ->  3/3
+   1:contains               3/3  ->  3/3
+   2:json_path_subset       3/3  ->  3/3
+
+offline-behaviour  [unchanged]
+   0:json_valid             3/3  ->  3/3
+   1:json_path_in           3/3  ->  3/3
+   2:json_path_subset       3/3  ->  3/3
+   3:contains               3/3  ->  3/3
+
+refuses-off-domain  [unchanged]
+   0:json_valid             3/3  ->  3/3
+   1:json_path_equals       3/3  ->  3/3
+   2:not_contains           3/3  ->  3/3
+
+refuses-parental-leave  [unchanged]
+   0:json_valid             3/3  ->  3/3
+   1:contains               3/3  ->  3/3
+   2:json_path_equals       3/3  ->  3/3
+```
+
+That is 15 binary scorer instances, every one stable at 3/3 -> 3/3, and one
+continuous scorer — the only thing that moved.
+
+**Where the variance came from.** Raw citations for `charging-bays`, from the
+stored output:
+
+```
+BASELINE  r0  cites=[product-specs.md 0.5965]
+BASELINE  r1  cites=[product-specs.md 0.5965, faq.md 0.4374]
+BASELINE  r2  cites=[product-specs.md 0.5965]
+CANDIDATE r0  cites=[product-specs.md 0.5965]
+CANDIDATE r1  cites=[product-specs.md 0.5965]
+CANDIDATE r2  cites=[product-specs.md 0.5965]
+```
+
+Retrieval is *exactly* deterministic: `product-specs.md` scores 0.5965 every
+single time, `faq.md` 0.4374 every single time it appears. What varied is how
+many citations the model chose to emit — one baseline repeat cited a second
+document. The scorer aggregates with `min`, so the extra citation pulled the
+minimum down.
+
+**The prediction, and how it actually turned out.** Before any measurement,
+the design spec recorded a falsifiable prediction: answer *prose* would vary
+while *structure* stayed stable, because the agent samples at the API default
+but its retrieval is deterministic and confidence derives from retrieval
+scores. Reported honestly, all three parts of that:
+
+1. The structural half held. `confidence` and `citations[].source` were
+   identical across every repeat.
+2. The prose half was not actually tested. No scorer detected prose
+   variation — but that is because substring assertions like `contains
+   "409"` are robust to rewording, not because the prose was identical. This
+   suite cannot tell a stable answer from a reworded one. That is a
+   limitation of the suite, not a finding about the agent.
+3. The variance that did appear was in neither place. It came from how many
+   citations the model elected to emit — a third source the prediction did
+   not anticipate.
+
+**What the measurement found in the tool itself.** The first run of the
+second capture did *not* report 5 unchanged. It reported `1 improved, 4
+unchanged` — `noisefloor` claiming a change on a system that had not
+changed, in the improvement direction. The cause was a degenerate-range hole
+in the continuous significance rule, the same failure mode that motivated
+splitting the binary rule during design (see [`docs/design-notes.md`
+§8](docs/design-notes.md#8-measured-run-to-run-variance-of-a-real-rag-agent)
+for the full account, including why the first attempt at the fix
+overcorrected). Fixed in `ade90b8`. Ten review passes and 182 tests did not
+surface it; one 15-call capture against a real system did. Validating the
+fix cost zero additional API calls — every raw output was already stored, so
+`noisefloor diff` just re-ran against the captured runs.
+
+**Also measured:** `refuses-parental-leave` retrieves at a top score of
+0.436, above the agent's 0.35 confidence floor, so whether it would gate to
+the canned refusal was a genuine open question going into this capture.
+Measured: it refuses cleanly — `low` confidence, zero citations, 3/3 on
+every scorer, every repeat.
 
 ## Guardrails
 

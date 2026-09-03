@@ -3,9 +3,12 @@
 #   cd ../rag-knowledge-agent && pip install -e . && rag ingest sample_corpus
 #   noisefloor check examples/rag-knowledge-agent/suite.yaml
 #
-# No baseline is committed yet -- that capture is pending, blocked on having
-# an ANTHROPIC_API_KEY available. It needs roughly 25 model calls (5 cases x
-# 5 repeats) once it happens.
+# A baseline is committed under baseline/ -- see README.md and
+# docs/design-notes.md section 8 for the measured write-up. It was captured
+# at 3 repeats per case rather than this file's default of 5, to limit API
+# spend (15 model calls, not 25). Regenerating it, or diffing against it with
+# a fresh run at this file's defaults, needs ANTHROPIC_API_KEY; reading the
+# committed baseline does not.
 #
 # The `allowed` lists below came from running rag-knowledge-agent's own
 # retrieval (the target project, not noisefloor) offline, no API key needed,
@@ -57,10 +60,9 @@ cases:
   - id: refuses-parental-leave
     # Retrieves at top score 0.436, above the 0.35 confidence floor, so this
     # is not gated to the canned refusal — the model must decide on its own
-    # whether the (off-topic) retrieved context supports an answer. The
-    # verdict below is a genuine unknown, not a safe bet: this case
-    # deliberately probes a near-floor question, and a failing scorer here
-    # is what Task 12's measurement is for, not a sign the suite is broken.
+    # whether the (off-topic) retrieved context supports an answer. Measured
+    # (see README.md / docs/design-notes.md §8): it refuses cleanly, low
+    # confidence, zero citations, 3/3 on every scorer, every repeat.
     input: What is Acme Robotics' parental leave policy?
     scorers:
       - json_valid

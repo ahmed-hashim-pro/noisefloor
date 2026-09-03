@@ -1,0 +1,31 @@
+{
+  "argv": [
+    "rag",
+    "ask",
+    "--json",
+    "Why did my task cancellation return 409?"
+  ],
+  "case_id": "error-code-409",
+  "duration_s": 15.534460708964616,
+  "exit_code": 0,
+  "outcome": "ok",
+  "parsed": {
+    "answer": "A 409 response to a task cancellation means the task is already buffered on a robot that is currently offline, so Fleet Control cannot recall it [sample_corpus/api-reference.md:Fleet Control API Reference > Tasks > DELETE /tasks/{task_id}]. The error code returned is `robot_unreachable` [sample_corpus/faq.md:Frequently Asked Questions > API and Integration > My task cancellation returned 409. What now?].\n\nTo resolve it, wait for the `robot.link_restored` event and then retry the cancellation. If the task has completed in the meantime, you will receive a `404` instead, which is the expected outcome [sample_corpus/faq.md:Frequently Asked Questions > API and Integration > My task cancellation returned 409. What now?].",
+    "citations": [
+      {
+        "heading": "Fleet Control API Reference > Tasks > DELETE /tasks/{task_id}",
+        "score": 0.5914,
+        "source": "sample_corpus/api-reference.md"
+      },
+      {
+        "heading": "Frequently Asked Questions > API and Integration > My task cancellation returned 409. What now?",
+        "score": 0.4945,
+        "source": "sample_corpus/faq.md"
+      }
+    ],
+    "confidence": "high"
+  },
+  "repeat": 0,
+  "stderr": "",
+  "stdout": "{\n  \"answer\": \"A 409 response to a task cancellation means the task is already buffered on a robot that is currently offline, so Fleet Control cannot recall it [sample_corpus/api-reference.md:Fleet Control API Reference > Tasks > DELETE /tasks/{task_id}]. The error code returned is `robot_unreachable` [sample_corpus/faq.md:Frequently Asked Questions > API and Integration > My task cancellation returned 409. What now?].\\n\\nTo resolve it, wait for the `robot.link_restored` event and then retry the cancellation. If the task has completed in the meantime, you will receive a `404` instead, which is the expected outcome [sample_corpus/faq.md:Frequently Asked Questions > API and Integration > My task cancellation returned 409. What now?].\",\n  \"citations\": [\n    {\n      \"source\": \"sample_corpus/api-reference.md\",\n      \"heading\": \"Fleet Control API Reference > Tasks > DELETE /tasks/{task_id}\",\n      \"score\": 0.5914\n    },\n    {\n      \"source\": \"sample_corpus/faq.md\",\n      \"heading\": \"Frequently Asked Questions > API and Integration > My task cancellation returned 409. What now?\",\n      \"score\": 0.4945\n    }\n  ],\n  \"confidence\": \"high\"\n}\n"
+}
