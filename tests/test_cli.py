@@ -416,6 +416,43 @@ def test_baseline_show_lists_pointers(tmp_path: Path, capsys) -> None:
     assert any(line.startswith("demo:") for line in out.splitlines())
 
 
+def test_baseline_show_with_a_corrupt_pointer_exits_three_not_one(
+    tmp_path: Path, capsys
+) -> None:
+    """`baseline show` used to parse every pointer directly with
+    json.loads(...)["run_id"], bypassing the guarded get_baseline() accessor
+    -- a corrupt pointer there raised uncaught, exiting 1 (Python's default)
+    instead of the harness's configuration-error exit 3."""
+    suite = write_suite(tmp_path)
+    run(tmp_path, "check", str(suite))  # adopts a baseline
+    paths = Paths(tmp_path / ".noisefloor")
+    paths.baseline_file("demo").write_text("{not valid json")
+    capsys.readouterr()
+
+    assert run(tmp_path, "baseline", "show") == 3
+    err = capsys.readouterr().err
+    assert "corrupt or incomplete" in err
+    assert "demo" in err
+
+
+def test_baseline_show_with_a_missing_set_at_exits_three_not_one(
+    tmp_path: Path, capsys
+) -> None:
+    """set_baseline() always writes both `run_id` and `set_at`, so valid JSON
+    missing `set_at` is corruption too -- not an optional field that can
+    silently fall back and return exit 0."""
+    suite = write_suite(tmp_path)
+    run(tmp_path, "check", str(suite))  # adopts a baseline
+    paths = Paths(tmp_path / ".noisefloor")
+    paths.baseline_file("demo").write_text(json.dumps({"run_id": "some-run-id"}))
+    capsys.readouterr()
+
+    assert run(tmp_path, "baseline", "show") == 3
+    err = capsys.readouterr().err
+    assert "corrupt or incomplete" in err
+    assert "demo" in err
+
+
 @pytest.mark.parametrize("args", [["run"], ["diff", "--format", "xml"]])
 def test_bad_usage_does_not_traceback(tmp_path: Path, args: list[str]) -> None:
     with pytest.raises(SystemExit) as exc:
