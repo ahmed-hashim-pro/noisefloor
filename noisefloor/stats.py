@@ -121,6 +121,7 @@ def _worse(
     after: ScorerAggregate,
     *,
     min_rate_drop: float,
+    mirrored: bool = False,
 ) -> str | None:
     """Reason `after`'s pass rate is worse than `before`'s, or None.
 
@@ -130,16 +131,30 @@ def _worse(
     from either side. The continuous mean/range clause is deliberately not
     here; see `_continuous_move` for why that one can't be evaluated by
     calling this same helper with arguments swapped.
+
+    `compare` calls this twice with arguments swapped, so the same logic
+    judges both directions. `before`/`after` drive that logic throughout;
+    `mirrored` marks the swapped (candidate-then-baseline) call so the
+    *text* can still read baseline-first, matching the band the report
+    prints alongside it. It never affects which clause fires.
     """
+    lo, hi = (after, before) if mirrored else (before, after)
+
     if before.pass_rate == 1.0 and after.pass_rate < 1.0:
+        if mirrored:
+            return (
+                f"pass rate {lo.rate_band} → {hi.rate_band}; the candidate is "
+                "now unanimous where the baseline varied"
+            )
         return (
             f"unanimous baseline {before.rate_band} → {after.rate_band}; "
             "a clean baseline showed no variance, so any failure is new"
         )
     if before.pass_rate - after.pass_rate > min_rate_drop + _THRESHOLD_EPSILON:
+        verb = "gain" if mirrored else "drop"
         return (
-            f"pass rate {before.rate_band} → {after.rate_band} "
-            f"(drop > {min_rate_drop:.2f})"
+            f"pass rate {lo.rate_band} → {hi.rate_band} "
+            f"({verb} > {min_rate_drop:.2f})"
         )
     return None
 
@@ -212,7 +227,11 @@ def compare(
 
     if (reason := _worse(baseline, candidate, min_rate_drop=min_rate_drop)) is not None:
         return Significance(key, "regressed", reason)
-    if (reason := _worse(candidate, baseline, min_rate_drop=min_rate_drop)) is not None:
+    if (
+        reason := _worse(
+            candidate, baseline, min_rate_drop=min_rate_drop, mirrored=True
+        )
+    ) is not None:
         return Significance(key, "improved", reason)
 
     # Baseline is the fixed reference in both directions here -- see

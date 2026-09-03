@@ -277,6 +277,24 @@ def test_an_improved_continuous_reason_reads_baseline_to_candidate() -> None:
     assert "outside the baseline band [0.300–0.320]" in result.reason
 
 
+def test_an_improved_rate_drop_reason_says_gain_not_drop() -> None:
+    baseline, candidate = agg_binary(1, 5), agg_binary(4, 5)
+    result = compare(baseline, candidate)
+    assert result.verdict == "improved"
+    assert result.reason.index("1/5") < result.reason.index("4/5")
+    assert "gain > 0.20" in result.reason
+    assert "drop" not in result.reason
+
+
+def test_an_improved_unanimous_reason_names_the_candidate_not_the_baseline() -> None:
+    baseline, candidate = agg_binary(4, 5), agg_binary(5, 5)
+    result = compare(baseline, candidate)
+    assert result.verdict == "improved"
+    assert result.reason.index("4/5") < result.reason.index("5/5")
+    assert "the candidate is now unanimous" in result.reason
+    assert "unanimous baseline" not in result.reason
+
+
 # -- refusing to guess -----------------------------------------------------
 
 
