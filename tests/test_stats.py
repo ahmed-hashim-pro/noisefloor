@@ -81,8 +81,15 @@ def test_identical_binary_results_are_unchanged() -> None:
     assert compare(agg_binary(3, 5), agg_binary(3, 5)).verdict == "unchanged"
 
 
-def test_improvement_is_the_mirror_of_regression() -> None:
-    assert compare(agg_binary(4, 5), agg_binary(5, 5)).verdict == "improved"
+def test_unanimous_candidate_from_a_flaky_baseline_is_unchanged() -> None:
+    """The unanimous clause is anchored to the baseline, not mirrored onto
+    the candidate: a baseline that already showed variance (4/5) makes a
+    5/5 candidate unremarkable, not an improvement. Old behaviour mirrored
+    the clause and reported `improved` here -- that was the defect; the
+    0.200 rate delta is identical to the 3/5 -> 2/5 case below, which reports
+    `unchanged`, so the verdict must not hinge on which side lands on
+    unanimity."""
+    assert compare(agg_binary(4, 5), agg_binary(5, 5)).verdict == "unchanged"
 
 
 def test_min_rate_drop_is_configurable() -> None:
@@ -286,13 +293,49 @@ def test_an_improved_rate_drop_reason_says_gain_not_drop() -> None:
     assert "drop" not in result.reason
 
 
-def test_an_improved_unanimous_reason_names_the_candidate_not_the_baseline() -> None:
+def test_a_unanimous_candidate_reason_is_not_reported_as_improved() -> None:
+    """The mirrored "candidate is now unanimous" reason text no longer
+    exists: unanimity only ever fires from the baseline side, so a 4/5 -> 5/5
+    move is `unchanged`, not `improved`, and carries the ordinary
+    within-noise reason."""
     baseline, candidate = agg_binary(4, 5), agg_binary(5, 5)
     result = compare(baseline, candidate)
-    assert result.verdict == "improved"
-    assert result.reason.index("4/5") < result.reason.index("5/5")
-    assert "the candidate is now unanimous" in result.reason
-    assert "unanimous baseline" not in result.reason
+    assert result.verdict == "unchanged"
+    assert "the candidate is now unanimous" not in result.reason
+
+
+# -- acceptance matrix: unanimous clause anchored to the baseline (#7) -----
+#
+# Same 0.200 rate delta, opposite verdicts, decided only by which side
+# happened to land on unanimity -- that was the defect. These five rows
+# pin the corrected matrix: unanimity fires only from the baseline, and
+# the rate-drop clause alone carries the symmetric improvement direction.
+
+
+def test_clean_baseline_any_failure_is_regressed() -> None:
+    """5/5 -> 4/5: clean baseline, any failure is new -- unchanged behaviour."""
+    assert compare(agg_binary(5, 5), agg_binary(4, 5)).verdict == "regressed"
+
+
+def test_flaky_baseline_unanimous_candidate_is_unchanged() -> None:
+    """4/5 -> 5/5: the change -- baseline had variance, a 5/5 candidate is
+    unremarkable."""
+    assert compare(agg_binary(4, 5), agg_binary(5, 5)).verdict == "unchanged"
+
+
+def test_large_rate_gain_is_improved_via_the_rate_drop_clause() -> None:
+    """2/5 -> 5/5: 0.600 delta, rate-drop clause."""
+    assert compare(agg_binary(2, 5), agg_binary(5, 5)).verdict == "improved"
+
+
+def test_small_rate_drop_from_a_flaky_baseline_is_unchanged() -> None:
+    """3/5 -> 2/5: unchanged behaviour."""
+    assert compare(agg_binary(3, 5), agg_binary(2, 5)).verdict == "unchanged"
+
+
+def test_rate_gain_of_one_third_is_improved_via_the_rate_drop_clause() -> None:
+    """2/3 -> 3/3: 0.333 delta, rate-drop clause."""
+    assert compare(agg_binary(2, 3), agg_binary(3, 3)).verdict == "improved"
 
 
 # -- refusing to guess -----------------------------------------------------

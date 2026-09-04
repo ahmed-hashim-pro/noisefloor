@@ -226,12 +226,16 @@ this is the exact failure mode the whole significance-rule design exists to
 prevent.
 
 The cause was the continuous range clause (§2, spec 6.3) sharing plumbing
-with the two binary clauses. Both binary regressions are implemented as a
-single mirrored call, `_worse(before, after)`, called once each way to get
-the regressed and improved verdicts — correct there, because a pass-rate
-delta past a threshold reads the same from either side, with no asymmetric
-"reference" role for either aggregate. The continuous clause was implemented
-the same way, and that is where it broke: on this capture the candidate's
+with the two binary clauses. At the time, both binary clauses were
+implemented behind a single mirrored call, `_worse(before, after)`, called
+once each way to get the regressed and improved verdicts. That mirroring is
+correct for the rate-drop clause, because a pass-rate delta past a threshold
+reads the same from either side, with no asymmetric "reference" role for
+either aggregate — but it was not correct for the unanimous-baseline clause,
+which turned out to share the same baseline-as-reference asymmetry as the
+continuous clause below; see the addendum at the end of this section for
+that fix, discovered later. The continuous clause was implemented the same
+mirrored way here, and that is where it broke first: on this capture the candidate's
 three citation-score values were all identical (`0.5965` x 3), so the
 candidate's own observed band had zero width. The mirrored call put that
 zero-width *candidate* band in the reference role for the improvement
@@ -279,6 +283,21 @@ gate to the canned refusal was a genuine open question, not a safe bet (see
 the comment that carried this in `examples/rag-knowledge-agent/suite.yaml`
 until this measurement). Measured: it refuses cleanly — `low` confidence,
 zero citations, 3/3 on every scorer, every repeat.
+
+**Addendum: the unanimous-baseline clause had the same defect (issue #7).**
+The mirroring flagged above as "correct there" for the binary clauses was
+only correct for the rate-drop half. The unanimous-baseline half was still
+being evaluated by a swapped `_worse` call, which meant a candidate reaching
+5/5 from a baseline that had already shown variance (4/5) was reported as
+`improved` — the identical shape as the continuous-clause bug in this
+section, just on the binary side and without a real-target capture to
+surface it. A 4/5 → 5/5 move and a 3/5 → 2/5 move carry the same 0.200 rate
+delta; only the first was flagged, decided solely by which side happened to
+land on unanimity. Fixed by pulling the clause out of `_worse` into its own
+function, `_unanimous_break`, which — like `_continuous_move` — always tests
+the baseline's own pass rate and is never called with arguments swapped. The
+rate-drop clause alone now carries the symmetric improvement direction for
+binary scorers.
 
 ## 9. Deliberately missing
 

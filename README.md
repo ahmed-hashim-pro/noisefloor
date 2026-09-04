@@ -84,6 +84,12 @@ counts out of N. A regression is either:
   observed no variance, so any failure is new behaviour; or
 - the pass rate dropped by more than `--min-rate-drop` (default 0.2).
 
+An improvement is reported by the second clause alone, read in reverse — a
+pass-rate *gain* past the same threshold. The first clause is anchored to the
+baseline and is never mirrored onto the candidate: a candidate reaching
+unanimity from a baseline that had already shown variance is unremarkable,
+not an improvement, so it reports `unchanged`.
+
 **Continuous scorers** (`json_path_number`, `latency`) require the candidate
 mean to fall outside the baseline's observed range *and* to move by more than
 `--min-effect`. A continuous scorer with bounds (`min`/`max`/`max_s`) also has
