@@ -56,7 +56,7 @@
 - Consumes: nothing.
 - Produces: `noisefloor.__version__: str`; `config.DEFAULT_REPEATS: int`, `config.DEFAULT_TIMEOUT_S: float`, `config.DEFAULT_MIN_RATE_DROP: float`, `config.DEFAULT_MIN_EFFECT: float`, `config.DEFAULT_ROOT: Path`; `config.Paths(root: Path)` with `.runs -> Path`, `.baselines -> Path`, `.run_dir(run_id: str) -> Path`, `.case_dir(run_id: str, case_id: str) -> Path`, `.baseline_file(suite_name: str) -> Path`, `.ensure() -> None`.
 
-- [ ] **Step 1: Write `pyproject.toml`**
+- [x] **Step 1: Write `pyproject.toml`**
 
 ```toml
 [build-system]
@@ -96,7 +96,7 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B", "SIM"]
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `tests/test_config.py`:
 
@@ -124,12 +124,12 @@ def test_ensure_creates_the_tree(tmp_path: Path) -> None:
     assert paths.baselines.is_dir()
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_config.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor'`
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Create `noisefloor/__init__.py`:
 
@@ -189,7 +189,7 @@ class Paths:
         self.baselines.mkdir(parents=True, exist_ok=True)
 ```
 
-- [ ] **Step 5: Install and run the tests**
+- [x] **Step 5: Install and run the tests**
 
 Run:
 ```bash
@@ -200,7 +200,7 @@ ruff check . && ruff format --check .
 ```
 Expected: 3 passed, ruff clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add pyproject.toml noisefloor/ tests/
@@ -221,7 +221,7 @@ git commit -m "Add project skeleton and configuration defaults"
 
 `extract` always returns a list: zero or one element for a scalar path, N for a wildcard path, and an empty list when the path is absent. Callers decide what absence means.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_jsonpath.py`:
 
@@ -276,12 +276,12 @@ def test_malformed_paths_are_rejected_at_parse_time(raw: str) -> None:
         JsonPath.parse(raw)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_jsonpath.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.jsonpath'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `noisefloor/jsonpath.py`:
 
@@ -371,12 +371,12 @@ def _step(values: list[Any], segment: _Segment):
                     yield from value
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `python -m pytest tests/test_jsonpath.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add noisefloor/jsonpath.py tests/test_jsonpath.py
@@ -403,7 +403,7 @@ git commit -m "Add the minimal JSON path subset used by scorers"
 
 Validation of individual scorer parameters is **not** done here — `scoring.validate_spec` owns it, and Task 5 wires it into `load_suite`. That keeps `suite.py` from needing to know every scorer.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_suite.py`:
 
@@ -518,12 +518,12 @@ def test_malformed_yaml_is_a_suite_error(tmp_path: Path) -> None:
         load_suite(write(tmp_path, "name: [unclosed"))
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_suite.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.suite'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `noisefloor/suite.py`:
 
@@ -684,12 +684,12 @@ def load_suite(path: Path) -> Suite:
     return Suite(model, path.resolve())
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `python -m pytest tests/test_suite.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add noisefloor/suite.py tests/test_suite.py
@@ -724,7 +724,7 @@ It prints `{"answer": ..., "confidence": ..., "citations": [...]}` to stdout. Wi
 
 Paired with the `{{repeat}}` template variable, that is how tests construct a *known* pass rate: `--flake-every 2 --repeat {{repeat}}` over four repeats gives exactly `fail, pass, fail, pass`. Tasks 6 and 8 rest on being able to produce a specific pass rate on demand, so `{{repeat}}` is not optional sugar.
 
-- [ ] **Step 1: Write the fake target**
+- [x] **Step 1: Write the fake target**
 
 Create `tests/fake_target.py`:
 
@@ -788,7 +788,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `tests/test_target.py`:
 
@@ -890,12 +890,12 @@ def test_missing_executable_is_error_exit_not_a_crash(tmp_path: Path) -> None:
     assert "definitely-not-a-real-binary-xyz" in result.stderr
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_target.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.target'`
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Create `noisefloor/target.py`:
 
@@ -1026,12 +1026,12 @@ def _text(value: str | bytes | None) -> str:
     return value.decode("utf-8", "replace") if isinstance(value, bytes) else value
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `python -m pytest tests/test_target.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add noisefloor/target.py tests/fake_target.py tests/test_target.py
@@ -1061,7 +1061,7 @@ Scorer keys are `f"{index}:{type}"`. Index-based keys mean reordering a case's s
 
 Text scorers (`contains`, `not_contains`, `regex`) read raw stdout by default, or the concatenation of a `path`'s string values when `path` is given.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_scoring.py`:
 
@@ -1253,12 +1253,12 @@ def test_keys_are_index_prefixed() -> None:
     assert [s.key for s in build_all(case)] == ["0:json_valid", "1:json_valid"]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_scoring.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.scoring'`
 
-- [ ] **Step 3: Pre-flight the mixin before writing nine scorers on top of it**
+- [x] **Step 3: Pre-flight the mixin before writing nine scorers on top of it**
 
 Five scorers inherit from two pydantic models at once
 (`class JsonPathEquals(_Scorer, _PathMixin)`). Pydantic v2 supports this, but if
@@ -1274,7 +1274,7 @@ If that errors, abandon the mixin: move `path: str | None` and
 `extract_values()` onto `_Scorer` itself and delete `_PathMixin`. The rest of
 the module is unchanged either way.
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Create `noisefloor/scoring.py`:
 
@@ -1571,12 +1571,12 @@ def describe() -> list[tuple[str, str, str]]:
     )
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `python -m pytest tests/test_scoring.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add noisefloor/scoring.py tests/test_scoring.py
@@ -1601,7 +1601,7 @@ git commit -m "Add the nine deterministic scorers and suite validation"
 
 This is the module the whole project rests on. It is pure functions over numbers so it can be tested exhaustively with no I/O.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_stats.py`:
 
@@ -1760,12 +1760,12 @@ def test_the_reason_carries_the_numbers() -> None:
     assert "5/5" in reason and "3/5" in reason
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_stats.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.stats'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `noisefloor/stats.py`:
 
@@ -1924,12 +1924,12 @@ def compare(
     )
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `python -m pytest tests/test_stats.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add noisefloor/stats.py tests/test_stats.py
@@ -1957,7 +1957,7 @@ git commit -m "Add noise aggregation and the binary and continuous significance 
 
 `target_cwd` is stored **as written in the suite file** (suite-relative), never resolved, so a committed run record carries no absolute path.
 
-- [ ] **Step 1: Write the shared fixtures**
+- [x] **Step 1: Write the shared fixtures**
 
 Create an empty `tests/__init__.py` — `tests/test_run.py` and
 `tests/test_report.py` import helpers from sibling test modules, which requires
@@ -2014,7 +2014,7 @@ def simple_suite(suite_factory):
     )
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `tests/test_run.py`:
 
@@ -2174,12 +2174,12 @@ def test_latest_run_id_is_the_newest(simple_suite, paths) -> None:
     assert latest_run_id(paths, "demo") == second.run_id
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_run.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.run'`
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Create `noisefloor/run.py`:
 
@@ -2449,12 +2449,12 @@ def _git_sha(cwd: Path) -> str | None:
     return result.stdout.strip() or None
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `python -m pytest tests/test_run.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add noisefloor/run.py tests/__init__.py tests/conftest.py tests/test_run.py
@@ -2491,7 +2491,7 @@ Verdict resolution, in order — the first match wins:
 | 7 | `unmeasured` | every comparable scorer was `unmeasured` or `skipped` |
 | 8 | `unchanged` | otherwise |
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_diff.py`:
 
@@ -2665,12 +2665,12 @@ def test_cases_are_ordered_worst_first() -> None:
     assert [c.verdict for c in d.cases] == ["broke", "regressed", "unchanged"]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_diff.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.diff'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `noisefloor/diff.py`:
 
@@ -2874,12 +2874,12 @@ def _error_note(case: CaseRun) -> str:
     return f"every repeat failed: {', '.join(outcomes)}"
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `python -m pytest tests/test_diff.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add noisefloor/diff.py tests/test_diff.py
@@ -2904,7 +2904,7 @@ git commit -m "Add noise-gated diff with broke, redefined, and added-case handli
 Every rendering prints the underlying counts and bands, because the significance
 rule is a heuristic and the reader has to be able to overrule it.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_report.py`:
 
@@ -2982,12 +2982,12 @@ def test_run_summary_reports_outcomes() -> None:
     assert "error" in text
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_report.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.report'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `noisefloor/report.py`:
 
@@ -3130,12 +3130,12 @@ def render_run_summary(record: RunRecord) -> str:
     )
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `python -m pytest tests/test_report.py -v && ruff check .`
 Expected: all pass, ruff clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add noisefloor/report.py tests/test_report.py
@@ -3163,7 +3163,7 @@ stating because they are not obvious from the table:
 - `diff` with no run id uses the most recent run; its suite name comes from the
   run record, so no suite file is needed to diff.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_cli.py`:
 
@@ -3331,12 +3331,12 @@ def test_bad_usage_does_not_traceback(tmp_path: Path, args: list[str]) -> None:
     assert exc.value.code == 2  # argparse's own usage error
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_cli.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'noisefloor.cli'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `noisefloor/cli.py`:
 
@@ -3592,12 +3592,12 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Run the whole suite**
+- [x] **Step 4: Run the whole suite**
 
 Run: `python -m pytest -v && ruff check . && ruff format --check .`
 Expected: all tests pass with no API key and no network.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add noisefloor/cli.py tests/test_cli.py
@@ -3617,7 +3617,7 @@ from a real run. **Do not invent numbers here.** Every place a measurement
 belongs gets the literal marker `<!-- MEASURED: filled in by Task 12 -->` so a
 missing capture is obvious rather than plausible.
 
-- [ ] **Step 1: Write the example suite**
+- [x] **Step 1: Write the example suite**
 
 Create `examples/rag-knowledge-agent/suite.yaml`:
 
@@ -3680,7 +3680,7 @@ cases:
       - {type: not_contains, needle: "flour", path: answer}
 ```
 
-- [ ] **Step 2: Write the README**
+- [x] **Step 2: Write the README**
 
 Create `README.md`:
 
@@ -3845,7 +3845,7 @@ HTTP adapter · LLM-as-judge scorer behind an explicit flag · bootstrap
 confidence intervals once N can be large · a GitHub Action wrapper.
 ````
 
-- [ ] **Step 3: Write the design notes**
+- [x] **Step 3: Write the design notes**
 
 Create `docs/design-notes.md` with these sections, each explaining a decision
 rather than restating the code:
@@ -3862,7 +3862,7 @@ rather than restating the code:
    `<!-- MEASURED: filled in by Task 12 -->`
 9. **Deliberately missing** — the non-goals from the spec, with reasons.
 
-- [ ] **Step 4: Update `.gitignore`**
+- [x] **Step 4: Update `.gitignore`**
 
 ```
 .noisefloor/
@@ -3872,7 +3872,7 @@ __pycache__/
 .venv/
 ```
 
-- [ ] **Step 5: Verify the docs do not contain unmeasured claims**
+- [x] **Step 5: Verify the docs do not contain unmeasured claims**
 
 Run:
 ```bash
@@ -3881,7 +3881,7 @@ grep -rn "MEASURED" README.md docs/design-notes.md
 Expected: every placeholder still present and accounted for. If a number appears
 anywhere in the docs that was not produced by a real run, delete it.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add README.md docs/design-notes.md examples/ .gitignore
@@ -3900,7 +3900,7 @@ This is the only task in the plan that touches a model.
 - Modify: `README.md`, `docs/design-notes.md`
 - Test: `tests/test_example_baseline.py`
 
-- [ ] **Step 1: Check the preconditions**
+- [x] **Step 1: Check the preconditions**
 
 Run:
 ```bash
@@ -3912,7 +3912,7 @@ If the key is missing, **stop and ask the user to export it. Do not fabricate
 output, and do not guess the numbers.** Leave the `MEASURED` placeholders in
 place and report the task as blocked.
 
-- [ ] **Step 2: Prepare the target**
+- [x] **Step 2: Prepare the target**
 
 ```bash
 cd ../rag-knowledge-agent
@@ -3921,7 +3921,7 @@ rag ingest sample_corpus
 cd -
 ```
 
-- [ ] **Step 3: Capture the baseline**
+- [x] **Step 3: Capture the baseline**
 
 ```bash
 noisefloor --root examples/rag-knowledge-agent/baseline \
@@ -3931,7 +3931,7 @@ noisefloor --root examples/rag-knowledge-agent/baseline \
 Roughly 25 model calls (5 cases × 5 repeats). Record the wall-clock time — the
 README quotes it.
 
-- [ ] **Step 4: Read the noise off the captured run**
+- [x] **Step 4: Read the noise off the captured run**
 
 Two numbers matter. The first is the per-scorer spread *within* the baseline:
 
@@ -3951,7 +3951,7 @@ Anything other than exit 0 here is either a real regression in the target or a
 badly tuned threshold, and the README has to say which. A second capture costs
 another ~25 calls; do it rather than guess.
 
-- [ ] **Step 5: Write the real numbers into the docs**
+- [x] **Step 5: Write the real numbers into the docs**
 
 Replace every `<!-- MEASURED: filled in by Task 12 -->` with captured output,
 pasted byte-for-byte. The README section must state, per scorer:
@@ -3971,7 +3971,7 @@ still makes scorer development free; and a measured zero is itself the result a
 reader wants). A negative result published plainly is worth more than a premise
 defended.
 
-- [ ] **Step 6: Add a test over the committed baseline**
+- [x] **Step 6: Add a test over the committed baseline**
 
 Create `tests/test_example_baseline.py`:
 
@@ -4019,7 +4019,7 @@ def test_the_committed_baseline_holds_no_absolute_paths() -> None:
         assert "/Users/" not in text and "/home/" not in text
 ```
 
-- [ ] **Step 7: Sanitise and verify**
+- [x] **Step 7: Sanitise and verify**
 
 Run:
 ```bash
@@ -4029,7 +4029,7 @@ python -m pytest -v && ruff check . && ruff format --check .
 ```
 Expected: no placeholders, no absolute paths, no key fragments, all tests pass.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add examples/ README.md docs/design-notes.md tests/test_example_baseline.py
