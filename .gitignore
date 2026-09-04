@@ -3,5 +3,4 @@ __pycache__/
 *.egg-info/
 .env
 .venv/
-.superpowers/
 build/

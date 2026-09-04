@@ -1,14 +1,12 @@
 # noisefloor Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Build a CLI harness that measures the run-to-run noise of a non-deterministic target before deciding whether a change is a regression.
 
 **Architecture:** A YAML suite names an argv-list target command and a list of cases with deterministic scorers. Each case runs N times; every raw stdout is persisted so scorers can be re-applied offline. A diff compares a candidate run against a saved baseline using two significance rules — pass-rate comparison for binary scorers, range-plus-effect-size for continuous ones — and sets the process exit code.
 
 **Tech Stack:** Python 3.11+, pydantic v2, PyYAML, pytest, ruff. No network, no API key, no model calls anywhere in the harness or its tests.
 
-**Spec:** `docs/superpowers/specs/2026-09-02-noisefloor-design.md`
+**Spec:** `docs/design/specs/2026-09-02-noisefloor-design.md`
 
 ## Global Constraints
 
