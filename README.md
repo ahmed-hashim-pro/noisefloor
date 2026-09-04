@@ -280,3 +280,37 @@ deterministically, including a known flake rate.
 
 HTTP adapter · LLM-as-judge scorer behind an explicit flag · bootstrap
 confidence intervals once N can be large · a GitHub Action wrapper.
+
+## Why this exists
+
+I had a RAG agent and no way to answer the only question that actually blocks a
+merge: *did this change make it worse?*
+
+Eval tooling answers a different question — what does this score — and on a
+system that returns a different answer every run, a score is not a thing you can
+compare. Two runs of unchanged code disagree. So every delta looks like a
+result, and the honest response to "the score dropped 4 points" is "compared to
+what spread?" — which nobody could tell me, because nobody had measured it.
+
+That is the whole idea. Measure how much the system moves on its own, then only
+call something a regression when the delta clears that. It reframes the problem
+from *scoring* to *comparison under uncertainty*, which is a statistics question
+rather than a prompting one, and it is why this repo contains two significance
+rules rather than a leaderboard.
+
+The part I did not expect: capturing a real baseline
+([above](#measured-how-noisy-is-a-real-rag-agent)) found a false positive in
+`noisefloor` itself. A clause was comparing against a freshly mirrored call
+instead of the stored baseline, so it flagged a change that had not happened. A
+tool for distinguishing signal from noise is exactly the kind of thing that
+should be pointed at itself before anyone is asked to trust it.
+
+Two deliberate constraints keep it usable. Targets are invoked as an argv list
+through a subprocess, never a shell string, so a case containing a quote is data
+and not a command. And every raw stdout is persisted, so scorers can be re-run
+offline against a historical capture — you can change how you score without
+paying for the model calls again.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
