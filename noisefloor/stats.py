@@ -116,6 +116,31 @@ class Significance:
     reason: str
 
 
+def _unanimous_break(
+    baseline: ScorerAggregate,
+    candidate: ScorerAggregate,
+) -> str | None:
+    """Reason the baseline was unanimous and the candidate was not, or None.
+
+    Anchored to the baseline only -- never called with arguments swapped,
+    unlike `_worse` below. "A clean baseline showed no variance, so any
+    deviation is new" is a claim about the baseline's role as the
+    deliberately-characterised reference; it is not a claim about the
+    candidate. At N=5 the candidate's own unanimity is one repeat away from
+    4/5, and a baseline that itself scored 4/5 has already demonstrated
+    variance that makes a 5/5 candidate unremarkable -- so this clause must
+    never fire in the reverse direction to manufacture an `improved` verdict.
+    See `_continuous_move`'s docstring for the same baseline-as-reference
+    principle applied to the continuous clause.
+    """
+    if baseline.pass_rate == 1.0 and candidate.pass_rate < 1.0:
+        return (
+            f"unanimous baseline {baseline.rate_band} → {candidate.rate_band}; "
+            "a clean baseline showed no variance, so any failure is new"
+        )
+    return None
+
+
 def _worse(
     before: ScorerAggregate,
     after: ScorerAggregate,
@@ -123,14 +148,15 @@ def _worse(
     min_rate_drop: float,
     mirrored: bool = False,
 ) -> str | None:
-    """Reason `after`'s pass rate is worse than `before`'s, or None.
+    """Reason `after`'s pass rate dropped from `before`'s past the threshold, or None.
 
-    Covers only the two binary clauses (spec 6.3: unanimous-baseline and
-    rate-drop), which apply to every scorer kind via its pass rate and are
-    genuinely symmetric -- a delta past a threshold is the same test read
-    from either side. The continuous mean/range clause is deliberately not
-    here; see `_continuous_move` for why that one can't be evaluated by
-    calling this same helper with arguments swapped.
+    Covers only the rate-drop clause (spec 6.3), which applies to every
+    scorer kind via its pass rate and is genuinely symmetric -- a delta past
+    a threshold is the same test read from either side. Neither the
+    unanimous-baseline clause (see `_unanimous_break`) nor the continuous
+    mean/range clause (see `_continuous_move`) are here, because both are
+    anchored to the baseline and must not be evaluated by calling this same
+    helper with arguments swapped.
 
     `compare` calls this twice with arguments swapped, so the same logic
     judges both directions. `before`/`after` drive that logic throughout;
@@ -140,16 +166,6 @@ def _worse(
     """
     lo, hi = (after, before) if mirrored else (before, after)
 
-    if before.pass_rate == 1.0 and after.pass_rate < 1.0:
-        if mirrored:
-            return (
-                f"pass rate {lo.rate_band} → {hi.rate_band}; the candidate is "
-                "now unanimous where the baseline varied"
-            )
-        return (
-            f"unanimous baseline {before.rate_band} → {after.rate_band}; "
-            "a clean baseline showed no variance, so any failure is new"
-        )
     if before.pass_rate - after.pass_rate > min_rate_drop + _THRESHOLD_EPSILON:
         verb = "gain" if mirrored else "drop"
         return (
@@ -225,6 +241,8 @@ def compare(
             f"only {min(baseline.n, candidate.n)} scored repeat(s); noise unmeasured",
         )
 
+    if (reason := _unanimous_break(baseline, candidate)) is not None:
+        return Significance(key, "regressed", reason)
     if (reason := _worse(baseline, candidate, min_rate_drop=min_rate_drop)) is not None:
         return Significance(key, "regressed", reason)
     if (
@@ -235,8 +253,8 @@ def compare(
         return Significance(key, "improved", reason)
 
     # Baseline is the fixed reference in both directions here -- see
-    # _continuous_move's docstring for why this one clause isn't a mirrored
-    # _worse call like the two above it.
+    # _continuous_move's docstring for why this one clause, like
+    # _unanimous_break above, isn't a mirrored _worse call.
     if baseline.kind == "continuous" and (
         sig := _continuous_move(baseline, candidate, min_effect=min_effect)
     ):
