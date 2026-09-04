@@ -1,5 +1,7 @@
 # noisefloor
 
+[![CI](https://github.com/ahmed-hashim-pro/noisefloor/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmed-hashim-pro/noisefloor/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A regression harness for systems that do not give the same answer twice.
 
 Most eval tooling answers *"what score does this get?"* The question that blocks
